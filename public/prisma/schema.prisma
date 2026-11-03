@@ -85,6 +85,7 @@ model Trip {
   nightlyRate Int?
   nights      Int?
   totalPrice  Int?
+  guests      Int?
   createdAt   DateTime @default(now())
   updatedAt DateTime @updatedAt
 
