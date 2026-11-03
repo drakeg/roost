@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { calculateNights } from "@/lib/pricing";
 
 export async function toggleWishlist(formData) {
   const user = await requireUser();
@@ -59,16 +60,25 @@ export async function createTrip(formData) {
 
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { id: true, ownerId: true },
+    select: { id: true, ownerId: true, price: true, active: true },
   });
 
-  if (!listing) {
+  if (!listing || !listing.active) {
     throw new Error("Listing not found.");
   }
 
   if (listing.ownerId === user.id) {
     throw new Error("You cannot reserve your own listing.");
   }
+
+  const nights = calculateNights(startsAt, endsAt);
+
+  if (nights < 1) {
+    throw new Error("Choose a valid check-in and check-out date.");
+  }
+
+  const nightlyRate = listing.price;
+  const totalPrice = nightlyRate * nights;
 
   const booked = await prisma.$transaction(
     async (tx) => {
@@ -93,6 +103,9 @@ export async function createTrip(formData) {
           listingId,
           startsAt,
           endsAt,
+          nightlyRate,
+          nights,
+          totalPrice,
         },
       });
 

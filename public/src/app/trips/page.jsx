@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cancelTrip } from "@/app/stay-actions";
+import { calculateNights, formatCurrency } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,16 @@ export default async function TripsPage() {
               <p className="mt-1 text-slate-500">{trip.listing.location}</p>
               <p className="mt-3 text-sm font-medium text-slate-700">
                 {trip.startsAt ? formatDate(trip.startsAt) : "Date TBD"} → {trip.endsAt ? formatDate(trip.endsAt) : "Date TBD"}
+              </p>
+              <p className="mt-2 text-sm text-slate-600">
+                {trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)} night
+                {(trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)) === 1 ? "" : "s"}
+                {" · "}
+                {formatCurrency(
+                  trip.totalPrice ??
+                    ((trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)) *
+                      (trip.nightlyRate ?? trip.listing.price))
+                )}
               </p>
             </div>
 

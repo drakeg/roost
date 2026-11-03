@@ -6,6 +6,7 @@ import {
   confirmReservation,
   declineReservation,
 } from "./actions";
+import { calculateNights, formatCurrency } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,17 @@ export default async function HostReservationsPage() {
                     <p>
                       <span className="font-semibold">Dates:</span>{" "}
                       {formatDate(trip.startsAt)} → {formatDate(trip.endsAt)}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Reservation:</span>{" "}
+                      {trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)} night
+                      {(trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)) === 1 ? "" : "s"}
+                      {" · "}
+                      {formatCurrency(
+                        trip.totalPrice ??
+                          ((trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)) *
+                            (trip.nightlyRate ?? trip.listing.price))
+                      )}
                     </p>
                   </div>
                 </div>

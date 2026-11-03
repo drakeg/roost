@@ -1,0 +1,4 @@
+ALTER TABLE "Trip"
+ADD COLUMN "nightlyRate" INTEGER,
+ADD COLUMN "nights" INTEGER,
+ADD COLUMN "totalPrice" INTEGER;

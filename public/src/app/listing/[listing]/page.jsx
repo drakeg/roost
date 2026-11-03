@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getListingById } from "@/lib/listings";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createTrip, toggleWishlist } from "@/app/stay-actions";
+import { toggleWishlist } from "@/app/stay-actions";
+import BookingForm from "./components/BookingForm";
 
 export const dynamic = "force-dynamic";
 
@@ -126,38 +127,12 @@ export default async function ListingPage({ params, searchParams }) {
               This is your listing, so reservations are disabled.
             </div>
           ) : user ? (
-            <form action={createTrip} className="mt-5 space-y-4">
-              <input type="hidden" name="listingId" value={listing.id} />
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Check in
-                </span>
-                <input
-                  type="date"
-                  name="startsAt"
-                  min={toDateInputValue(tomorrow)}
-                  defaultValue={toDateInputValue(tomorrow)}
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Check out
-                </span>
-                <input
-                  type="date"
-                  name="endsAt"
-                  min={toDateInputValue(dayAfter)}
-                  defaultValue={toDateInputValue(dayAfter)}
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                />
-              </label>
-              <button className="w-full rounded-2xl bg-sky-400 px-5 py-4 font-bold text-slate-950 hover:bg-sky-300">
-                Reserve stay
-              </button>
-            </form>
+            <BookingForm
+              listingId={listing.id}
+              nightlyRate={listing.price}
+              defaultStart={toDateInputValue(tomorrow)}
+              defaultEnd={toDateInputValue(dayAfter)}
+            />
           ) : (
             <Link
               href="/login"
