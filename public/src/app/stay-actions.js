@@ -43,6 +43,7 @@ export async function createTrip(formData) {
   const listingId = String(formData.get("listingId") ?? "");
   const startsAtRaw = String(formData.get("startsAt") ?? "");
   const endsAtRaw = String(formData.get("endsAt") ?? "");
+  const guests = Number.parseInt(String(formData.get("guests") ?? "1"), 10);
 
   const startsAt = new Date(startsAtRaw);
   const endsAt = new Date(endsAtRaw);
@@ -60,11 +61,15 @@ export async function createTrip(formData) {
 
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { id: true, ownerId: true, price: true, active: true },
+    select: { id: true, ownerId: true, price: true, active: true, guests: true },
   });
 
   if (!listing || !listing.active) {
     throw new Error("Listing not found.");
+  }
+
+  if (!Number.isFinite(guests) || guests < 1 || guests > listing.guests) {
+    throw new Error(`Choose between 1 and ${listing.guests} guests.`);
   }
 
   if (listing.ownerId === user.id) {
@@ -106,6 +111,7 @@ export async function createTrip(formData) {
           nightlyRate,
           nights,
           totalPrice,
+          guests,
         },
       });
 
