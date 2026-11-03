@@ -55,6 +55,8 @@ export default async function TripsPage() {
                 {trip.startsAt ? formatDate(trip.startsAt) : "Date TBD"} → {trip.endsAt ? formatDate(trip.endsAt) : "Date TBD"}
               </p>
               <p className="mt-2 text-sm text-slate-600">
+                {trip.guests ?? 1} guest{(trip.guests ?? 1) === 1 ? "" : "s"}
+                {" · "}
                 {trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)} night
                 {(trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)) === 1 ? "" : "s"}
                 {" · "}
