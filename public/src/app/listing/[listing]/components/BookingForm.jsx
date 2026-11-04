@@ -29,6 +29,7 @@ export default function BookingForm({
   nightlyRate,
   defaultStart,
   defaultEnd,
+  maxGuests,
 }) {
   const [startsAt, setStartsAt] = useState(defaultStart);
   const [endsAt, setEndsAt] = useState(defaultEnd);
@@ -43,6 +44,23 @@ export default function BookingForm({
   return (
     <form action={createTrip} className="mt-5 space-y-4">
       <input type="hidden" name="listingId" value={listingId} />
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Guests
+        </span>
+        <select
+          name="guests"
+          defaultValue="1"
+          className="w-full rounded-xl border border-slate-300 px-3 py-2"
+        >
+          {Array.from({ length: maxGuests }, (_, index) => index + 1).map((count) => (
+            <option key={count} value={count}>
+              {count} guest{count === 1 ? "" : "s"}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label className="block">
         <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">

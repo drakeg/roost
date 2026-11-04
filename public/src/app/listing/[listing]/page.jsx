@@ -132,6 +132,7 @@ export default async function ListingPage({ params, searchParams }) {
               nightlyRate={listing.price}
               defaultStart={toDateInputValue(tomorrow)}
               defaultEnd={toDateInputValue(dayAfter)}
+              maxGuests={listing.guests}
             />
           ) : (
             <Link

@@ -90,6 +90,10 @@ export default async function HostReservationsPage() {
                       {formatDate(trip.startsAt)} → {formatDate(trip.endsAt)}
                     </p>
                     <p>
+                      <span className="font-semibold">Guests:</span>{" "}
+                      {trip.guests ?? 1}
+                    </p>
+                    <p>
                       <span className="font-semibold">Reservation:</span>{" "}
                       {trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)} night
                       {(trip.nights ?? calculateNights(trip.startsAt, trip.endsAt)) === 1 ? "" : "s"}
