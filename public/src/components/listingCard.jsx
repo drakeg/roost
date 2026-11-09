@@ -27,7 +27,7 @@ export default function ListingCard({ listing }) {
               <p className="mt-1 text-sm text-slate-500">{listing.location}</p>
             </div>
             <span className="whitespace-nowrap text-sm font-medium text-slate-700">
-              ★ {listing.rating}
+              {listing.rating > 0 ? `★ ${listing.rating.toFixed(1)}` : "New"}
             </span>
           </div>
           <div className="flex items-end justify-between">

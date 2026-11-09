@@ -37,6 +37,24 @@ export default async function ListingPage({ params, searchParams }) {
       )
     : false;
 
+  const [reviews, reviewCount] = await Promise.all([
+    prisma.review.findMany({
+      where: { listingId: id },
+      include: {
+        user: {
+          select: {
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.review.count({ where: { listingId: id } }),
+  ]);
+
   const ownsListing = Boolean(user && databaseListing?.ownerId === user.id);
   const tomorrow = todayUtc();
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -80,7 +98,10 @@ export default async function ListingPage({ params, searchParams }) {
           <h1 className="mt-2 text-4xl font-bold tracking-tight">{listing.title}</h1>
           <p className="mt-3 text-slate-500">
             {listing.location} · {listing.guests} guests · {listing.bedrooms} bedroom
-            {listing.bedrooms === 1 ? "" : "s"} · ★ {listing.rating}
+            {listing.bedrooms === 1 ? "" : "s"} ·{" "}
+            {listing.rating > 0
+              ? `★ ${listing.rating.toFixed(1)} · ${reviewCount} review${reviewCount === 1 ? "" : "s"}`
+              : "New — no reviews yet"}
           </p>
           <p className="mt-8 max-w-3xl text-lg leading-8 text-slate-700">
             {listing.description}
@@ -89,6 +110,62 @@ export default async function ListingPage({ params, searchParams }) {
             <p className="text-sm text-slate-500">Hosted by</p>
             <p className="font-semibold">{listing.owner}</p>
           </div>
+
+          <section className="mt-10 border-t border-slate-200 pt-8">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-sky-700">Guest feedback</p>
+                <h2 className="mt-1 text-2xl font-bold">Verified stay reviews</h2>
+              </div>
+              {listing.rating > 0 ? (
+                <p className="font-semibold">
+                  ★ {listing.rating.toFixed(1)} · {reviews.length} review
+                  {reviewCount === 1 ? "" : "s"}
+                </p>
+              ) : null}
+            </div>
+
+            {reviews.length ? (
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {reviews.map((review) => {
+                  const reviewer =
+                    [review.user.firstName, review.user.lastName]
+                      .filter(Boolean)
+                      .join(" ") || `@${review.user.username}`;
+
+                  return (
+                    <article
+                      key={review.id}
+                      className="rounded-2xl border border-slate-200 bg-white p-5"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="font-semibold">{reviewer}</p>
+                        <p className="text-sm font-semibold">
+                          {"★".repeat(review.rating)}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Verified stay ·{" "}
+                        {new Intl.DateTimeFormat("en-US", {
+                          month: "short",
+                          year: "numeric",
+                        }).format(review.createdAt)}
+                      </p>
+                      {review.comment ? (
+                        <p className="mt-3 leading-6 text-slate-700">
+                          {review.comment}
+                        </p>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+                No verified reviews yet.
+              </div>
+            )}
+          </section>
         </div>
 
         <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
