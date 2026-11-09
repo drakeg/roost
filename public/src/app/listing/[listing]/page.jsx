@@ -5,12 +5,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toggleWishlist } from "@/app/stay-actions";
 import BookingForm from "./components/BookingForm";
+import { toDateInputValue, todayUtc } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
-
-function toDateInputValue(date) {
-  return date.toISOString().slice(0, 10);
-}
 
 export default async function ListingPage({ params, searchParams }) {
   const { listing: id } = await params;
@@ -41,10 +38,10 @@ export default async function ListingPage({ params, searchParams }) {
     : false;
 
   const ownsListing = Boolean(user && databaseListing?.ownerId === user.id);
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dayAfter = new Date();
-  dayAfter.setDate(dayAfter.getDate() + 2);
+  const tomorrow = todayUtc();
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const dayAfter = todayUtc();
+  dayAfter.setUTCDate(dayAfter.getUTCDate() + 2);
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-10">
