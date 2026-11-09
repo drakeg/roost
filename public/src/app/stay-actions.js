@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { calculateNights } from "@/lib/pricing";
+import { calculateNights, parseDateInput, todayUtc } from "@/lib/pricing";
 
 export async function toggleWishlist(formData) {
   const user = await requireUser();
@@ -45,15 +45,14 @@ export async function createTrip(formData) {
   const endsAtRaw = String(formData.get("endsAt") ?? "");
   const guests = Number.parseInt(String(formData.get("guests") ?? "1"), 10);
 
-  const startsAt = new Date(startsAtRaw);
-  const endsAt = new Date(endsAtRaw);
-  const now = new Date();
+  const startsAt = parseDateInput(startsAtRaw);
+  const endsAt = parseDateInput(endsAtRaw);
 
   if (
     !listingId ||
-    Number.isNaN(startsAt.getTime()) ||
-    Number.isNaN(endsAt.getTime()) ||
-    startsAt < new Date(now.toDateString()) ||
+    !startsAt ||
+    !endsAt ||
+    startsAt < todayUtc() ||
     endsAt <= startsAt
   ) {
     throw new Error("Choose a valid check-in and check-out date.");
@@ -85,42 +84,54 @@ export async function createTrip(formData) {
   const nightlyRate = listing.price;
   const totalPrice = nightlyRate * nights;
 
-  const booked = await prisma.$transaction(
-    async (tx) => {
-      const conflict = await tx.trip.findFirst({
-        where: {
-          listingId,
-          status: { in: ["PENDING", "CONFIRMED"] },
-          AND: [
-            { startsAt: { lt: endsAt } },
-            { endsAt: { gt: startsAt } },
-          ],
-        },
-      });
+  let booked = false;
 
-      if (conflict) {
-        return false;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      booked = await prisma.$transaction(
+        async (tx) => {
+          const conflict = await tx.trip.findFirst({
+            where: {
+              listingId,
+              status: { in: ["PENDING", "CONFIRMED"] },
+              AND: [
+                { startsAt: { lt: endsAt } },
+                { endsAt: { gt: startsAt } },
+              ],
+            },
+          });
+
+          if (conflict) {
+            return false;
+          }
+
+          await tx.trip.create({
+            data: {
+              userId: user.id,
+              listingId,
+              startsAt,
+              endsAt,
+              nightlyRate,
+              nights,
+              totalPrice,
+              guests,
+            },
+          });
+
+          return true;
+        },
+        {
+          isolationLevel: "Serializable",
+        }
+      );
+
+      break;
+    } catch (error) {
+      if (error?.code !== "P2034" || attempt === 3) {
+        throw error;
       }
-
-      await tx.trip.create({
-        data: {
-          userId: user.id,
-          listingId,
-          startsAt,
-          endsAt,
-          nightlyRate,
-          nights,
-          totalPrice,
-          guests,
-        },
-      });
-
-      return true;
-    },
-    {
-      isolationLevel: "Serializable",
     }
-  );
+  }
 
   if (!booked) {
     redirect(`/listing/${listingId}?error=Those%20dates%20are%20not%20available`);
