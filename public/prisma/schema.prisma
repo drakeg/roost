@@ -31,6 +31,7 @@ model User {
   trips     Trip[]
   wishlists Wishlist[]
   sessions  Session[]
+  reviews   Review[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -45,7 +46,7 @@ model Listing {
   price        Int
   guests       Int        @default(1)
   bedrooms     Int        @default(1)
-  rating       Float      @default(5)
+  rating       Float      @default(0)
   featured     Boolean    @default(false)
   active       Boolean    @default(true)
   mapData      Json?
@@ -54,6 +55,7 @@ model Listing {
   owner        User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   trips        Trip[]
   wishlists    Wishlist[]
+  reviews      Review[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -87,6 +89,7 @@ model Trip {
   totalPrice  Int?
   guests      Int?
   createdAt   DateTime @default(now())
+  review    Review?
   updatedAt DateTime @updatedAt
 
   @@index([userId])
@@ -104,4 +107,22 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+
+model Review {
+  id        String   @id @default(cuid())
+  tripId    String   @unique
+  userId    String
+  listingId String
+  rating    Int
+  comment   String?
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([listingId])
 }
