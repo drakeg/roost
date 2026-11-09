@@ -5,12 +5,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toggleWishlist } from "@/app/stay-actions";
 import BookingForm from "./components/BookingForm";
+import { toDateInputValue } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
-
-function toDateInputValue(date) {
-  return date.toISOString().slice(0, 10);
-}
 
 export default async function ListingPage({ params, searchParams }) {
   const { listing: id } = await params;
