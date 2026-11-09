@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cancelTrip } from "@/app/stay-actions";
-import { calculateNights, formatCurrency } from "@/lib/pricing";
+import { calculateNights, formatCurrency, todayUtc } from "@/lib/pricing";
+import { submitReview } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export default async function TripsPage() {
 
   const trips = await prisma.trip.findMany({
     where: { userId: user.id },
-    include: { listing: true },
+    include: { listing: true, review: true },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
 
@@ -68,14 +69,59 @@ export default async function TripsPage() {
               </p>
             </div>
 
-            {["PENDING", "CONFIRMED"].includes(trip.status) ? (
-              <form action={cancelTrip}>
-                <input type="hidden" name="tripId" value={trip.id} />
-                <button className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-red-300 hover:text-red-700">
-                  Cancel trip
-                </button>
-              </form>
-            ) : null}
+            <div className="w-full space-y-3 sm:w-auto sm:min-w-64">
+              {["PENDING", "CONFIRMED"].includes(trip.status) &&
+              (!trip.endsAt || trip.endsAt >= todayUtc()) ? (
+                <form action={cancelTrip}>
+                  <input type="hidden" name="tripId" value={trip.id} />
+                  <button className="w-full rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-red-300 hover:text-red-700">
+                    Cancel trip
+                  </button>
+                </form>
+              ) : null}
+
+              {trip.status === "CONFIRMED" &&
+              trip.endsAt &&
+              trip.endsAt < todayUtc() &&
+              !trip.review ? (
+                <form action={submitReview} className="space-y-2 rounded-2xl bg-slate-50 p-4">
+                  <input type="hidden" name="tripId" value={trip.id} />
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Rate your stay
+                  </label>
+                  <select
+                    name="rating"
+                    defaultValue="5"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="5">5 — Excellent</option>
+                    <option value="4">4 — Very good</option>
+                    <option value="3">3 — Good</option>
+                    <option value="2">2 — Fair</option>
+                    <option value="1">1 — Poor</option>
+                  </select>
+                  <textarea
+                    name="comment"
+                    maxLength={1000}
+                    rows={3}
+                    placeholder="Share what future guests should know."
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                  />
+                  <button className="w-full rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
+                    Submit review
+                  </button>
+                </form>
+              ) : null}
+
+              {trip.review ? (
+                <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="font-semibold">Your review: {"★".repeat(trip.review.rating)}</p>
+                  {trip.review.comment ? (
+                    <p className="mt-1 text-slate-600">{trip.review.comment}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </article>
         )) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
