@@ -37,20 +37,23 @@ export default async function ListingPage({ params, searchParams }) {
       )
     : false;
 
-  const reviews = await prisma.review.findMany({
-    where: { listingId: id },
-    include: {
-      user: {
-        select: {
-          username: true,
-          firstName: true,
-          lastName: true,
+  const [reviews, reviewCount] = await Promise.all([
+    prisma.review.findMany({
+      where: { listingId: id },
+      include: {
+        user: {
+          select: {
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-  });
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+    prisma.review.count({ where: { listingId: id } }),
+  ]);
 
   const ownsListing = Boolean(user && databaseListing?.ownerId === user.id);
   const tomorrow = todayUtc();
@@ -97,7 +100,7 @@ export default async function ListingPage({ params, searchParams }) {
             {listing.location} · {listing.guests} guests · {listing.bedrooms} bedroom
             {listing.bedrooms === 1 ? "" : "s"} ·{" "}
             {listing.rating > 0
-              ? `★ ${listing.rating.toFixed(1)} · ${reviews.length} review${reviews.length === 1 ? "" : "s"}`
+              ? `★ ${listing.rating.toFixed(1)} · ${reviewCount} review${reviewCount === 1 ? "" : "s"}`
               : "New — no reviews yet"}
           </p>
           <p className="mt-8 max-w-3xl text-lg leading-8 text-slate-700">
@@ -117,7 +120,7 @@ export default async function ListingPage({ params, searchParams }) {
               {listing.rating > 0 ? (
                 <p className="font-semibold">
                   ★ {listing.rating.toFixed(1)} · {reviews.length} review
-                  {reviews.length === 1 ? "" : "s"}
+                  {reviewCount === 1 ? "" : "s"}
                 </p>
               ) : null}
             </div>
