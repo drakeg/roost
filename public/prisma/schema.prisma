@@ -23,6 +23,7 @@ enum TripStatus {
 model User {
   id        String     @id @default(cuid())
   username  String     @unique
+  email     String?     @unique
   firstName String?
   lastName  String?
   password  String

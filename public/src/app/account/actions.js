@@ -8,12 +8,32 @@ import { destroySession, hashPassword, requireUser, verifyPassword } from "@/lib
 export async function updateProfile(formData) {
   const user = await requireUser();
 
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    redirect("/account?error=Enter%20a%20valid%20email%20address");
+  }
+
+  if (email) {
+    const duplicate = await prisma.user.findFirst({
+      where: {
+        email,
+        id: { not: user.id },
+      },
+      select: { id: true },
+    });
+
+    if (duplicate) {
+      redirect("/account?error=Email%20address%20is%20already%20in%20use");
+    }
+  }
 
   await prisma.user.update({
     where: { id: user.id },
     data: {
+      email: email || null,
       firstName: firstName || null,
       lastName: lastName || null,
     },

@@ -31,6 +31,21 @@ export default async function AccountPage({ searchParams }) {
             <h2 className="text-xl font-bold">Profile</h2>
             <p className="mt-1 text-sm text-slate-500">Update the name shown around Roost.</p>
           </div>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold">Email address</span>
+            <input
+              name="email"
+              type="email"
+              defaultValue={user.email ?? ""}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            />
+            {!user.email ? (
+              <span className="mt-2 block text-xs text-amber-700">
+                Add an email address to enable future account recovery.
+              </span>
+            ) : null}
+          </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label>
               <span className="mb-2 block text-sm font-semibold">First name</span>
