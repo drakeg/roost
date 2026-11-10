@@ -38,6 +38,18 @@ export async function requestPasswordReset(formData) {
     : null;
 
   if (user?.email) {
+    const recent = await prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        createdAt: { gt: new Date(Date.now() - 60 * 1000) },
+      },
+      select: { id: true },
+    });
+
+    if (recent) {
+      redirect("/forgot-password?sent=1");
+    }
+
     const token = randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + RESET_MINUTES * 60 * 1000);
 
@@ -61,7 +73,7 @@ export async function requestPasswordReset(formData) {
       });
     } catch (error) {
       await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
-      throw error;
+      console.error("[roost] Password reset delivery failed.", error);
     }
   }
 
