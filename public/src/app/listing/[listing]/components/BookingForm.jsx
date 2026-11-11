@@ -30,6 +30,7 @@ export default function BookingForm({
   defaultStart,
   defaultEnd,
   maxGuests,
+  defaultGuests = 1,
 }) {
   const [startsAt, setStartsAt] = useState(defaultStart);
   const [endsAt, setEndsAt] = useState(defaultEnd);
@@ -51,7 +52,7 @@ export default function BookingForm({
         </span>
         <select
           name="guests"
-          defaultValue="1"
+          defaultValue={String(defaultGuests)}
           className="w-full rounded-xl border border-slate-300 px-3 py-2"
         >
           {Array.from({ length: maxGuests }, (_, index) => index + 1).map((count) => (
