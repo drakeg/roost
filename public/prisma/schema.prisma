@@ -60,6 +60,7 @@ model Listing {
   trips        Trip[]
   wishlists    Wishlist[]
   reviews      Review[]
+  blocks       ListingBlock[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -157,4 +158,19 @@ model EmailVerificationToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+
+model ListingBlock {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([listingId])
+  @@index([startsAt])
+  @@index([endsAt])
 }
