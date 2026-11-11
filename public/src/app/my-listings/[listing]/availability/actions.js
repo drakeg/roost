@@ -32,46 +32,72 @@ export async function createListingBlock(formData) {
     redirect("/my-listings");
   }
 
-  const [tripConflict, blockConflict] = await Promise.all([
-    prisma.trip.findFirst({
-      where: {
-        listingId,
-        status: { in: ["PENDING", "CONFIRMED"] },
-        AND: [
-          { startsAt: { lt: endsAt } },
-          { endsAt: { gt: startsAt } },
-        ],
-      },
-      select: { id: true },
-    }),
-    prisma.listingBlock.findFirst({
-      where: {
-        listingId,
-        AND: [
-          { startsAt: { lt: endsAt } },
-          { endsAt: { gt: startsAt } },
-        ],
-      },
-      select: { id: true },
-    }),
-  ]);
+  let result = "conflict";
 
-  if (tripConflict) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      result = await prisma.$transaction(
+        async (tx) => {
+          const [tripConflict, blockConflict] = await Promise.all([
+            tx.trip.findFirst({
+              where: {
+                listingId,
+                status: { in: ["PENDING", "CONFIRMED"] },
+                AND: [
+                  { startsAt: { lt: endsAt } },
+                  { endsAt: { gt: startsAt } },
+                ],
+              },
+              select: { id: true },
+            }),
+            tx.listingBlock.findFirst({
+              where: {
+                listingId,
+                AND: [
+                  { startsAt: { lt: endsAt } },
+                  { endsAt: { gt: startsAt } },
+                ],
+              },
+              select: { id: true },
+            }),
+          ]);
+
+          if (tripConflict) return "trip";
+          if (blockConflict) return "block";
+
+          await tx.listingBlock.create({
+            data: {
+              listingId,
+              startsAt,
+              endsAt,
+              note: note ? note.slice(0, 200) : null,
+            },
+          });
+
+          return "created";
+        },
+        { isolationLevel: "Serializable" }
+      );
+
+      break;
+    } catch (error) {
+      if (error?.code !== "P2034" || attempt === 3) {
+        throw error;
+      }
+    }
+  }
+
+  if (result === "trip") {
     redirect(`/my-listings/${listingId}/availability?error=Those%20dates%20overlap%20an%20active%20reservation`);
   }
 
-  if (blockConflict) {
+  if (result === "block") {
     redirect(`/my-listings/${listingId}/availability?error=Those%20dates%20overlap%20an%20existing%20blocked%20range`);
   }
 
-  await prisma.listingBlock.create({
-    data: {
-      listingId,
-      startsAt,
-      endsAt,
-      note: note ? note.slice(0, 200) : null,
-    },
-  });
+  if (result !== "created") {
+    redirect(`/my-listings/${listingId}/availability?error=Those%20dates%20could%20not%20be%20blocked`);
+  }
 
   revalidatePath("/search");
   revalidatePath(`/listing/${listingId}`);
