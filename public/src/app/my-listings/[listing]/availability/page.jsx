@@ -54,7 +54,7 @@ export default async function ListingAvailabilityPage({ params, searchParams }) 
       <p className="mt-6 text-sm font-semibold text-sky-700">Hosting</p>
       <h1 className="text-4xl font-bold tracking-tight">Availability</h1>
       <p className="mt-2 text-slate-500">
-        Block dates when {listing.title} should not accept reservation requests.
+        Block date ranges when {listing.title} should not accept reservation requests. The end date is when the listing becomes available again.
       </p>
 
       {query?.saved ? (
@@ -94,7 +94,7 @@ export default async function ListingAvailabilityPage({ params, searchParams }) 
         </label>
 
         <label>
-          <span className="mb-2 block text-sm font-semibold">Through</span>
+          <span className="mb-2 block text-sm font-semibold">Available again</span>
           <input
             type="date"
             name="endsAt"
