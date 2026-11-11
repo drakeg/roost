@@ -1,6 +1,6 @@
 import { getCurrentSession, requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { changePassword, revokeOtherSessions, revokeSession, updateProfile } from "./actions";
+import { changePassword, resendEmailVerification, revokeOtherSessions, revokeSession, updateProfile } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +59,15 @@ export default async function AccountPage({ searchParams }) {
               ? "Session revoked."
               : params.saved === "sessions"
                 ? "Other sessions signed out."
-                : "Account updated."}
+                : params.saved === "email-verified"
+                  ? "Email address verified."
+                  : "Account updated."}
+        </p>
+      ) : null}
+
+      {params?.verify ? (
+        <p className="mt-5 rounded-xl bg-sky-50 p-3 text-sm text-sky-700">
+          Verification email sent. Check your inbox for a link that expires in 24 hours.
         </p>
       ) : null}
 
@@ -88,7 +96,15 @@ export default async function AccountPage({ searchParams }) {
               <span className="mt-2 block text-xs text-amber-700">
                 Add an email address to enable future account recovery.
               </span>
-            ) : null}
+            ) : user.emailVerifiedAt ? (
+              <span className="mt-2 block text-xs font-semibold text-emerald-700">
+                Verified
+              </span>
+            ) : (
+              <span className="mt-2 block text-xs font-semibold text-amber-700">
+                Not verified — password recovery is disabled until this address is verified.
+              </span>
+            )}
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label>
@@ -108,9 +124,19 @@ export default async function AccountPage({ searchParams }) {
               />
             </label>
           </div>
-          <button className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white">
-            Save profile
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white">
+              Save profile
+            </button>
+            {user.email && !user.emailVerifiedAt ? (
+              <button
+                formAction={resendEmailVerification}
+                className="rounded-xl border border-slate-300 px-5 py-3 font-semibold"
+              >
+                Resend verification
+              </button>
+            ) : null}
+          </div>
         </form>
 
 

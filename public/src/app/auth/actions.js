@@ -8,6 +8,7 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
+import { issueEmailVerification } from "@/lib/email-verification";
 
 function normalizeUsername(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -57,8 +58,9 @@ export async function register(formData) {
     },
   });
 
+  await issueEmailVerification(user.id, user.email);
   await createSession(user.id);
-  redirect("/");
+  redirect("/account?verify=sent");
 }
 
 export async function login(formData) {

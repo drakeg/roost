@@ -33,11 +33,11 @@ export async function requestPasswordReset(formData) {
   const user = email
     ? await prisma.user.findUnique({
         where: { email },
-        select: { id: true, email: true },
+        select: { id: true, email: true, emailVerifiedAt: true },
       })
     : null;
 
-  if (user?.email) {
+  if (user?.email && user.emailVerifiedAt) {
     const recent = await prisma.passwordResetToken.findFirst({
       where: {
         userId: user.id,
