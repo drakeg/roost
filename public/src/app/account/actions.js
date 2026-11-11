@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { destroySession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
+import { destroySession, getCurrentSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 
 export async function updateProfile(formData) {
   const user = await requireUser();
@@ -73,4 +73,45 @@ export async function changePassword(formData) {
   await destroySession();
 
   redirect("/login");
+}
+
+
+export async function revokeSession(formData) {
+  const user = await requireUser();
+  const current = await getCurrentSession();
+  const sessionId = String(formData.get("sessionId") ?? "");
+
+  if (!sessionId) {
+    redirect("/account?error=Session%20not%20found");
+  }
+
+  if (current?.id === sessionId) {
+    await destroySession();
+    redirect("/login");
+  }
+
+  await prisma.session.deleteMany({
+    where: {
+      id: sessionId,
+      userId: user.id,
+    },
+  });
+
+  revalidatePath("/account");
+  redirect("/account?saved=session");
+}
+
+export async function revokeOtherSessions() {
+  const user = await requireUser();
+  const current = await getCurrentSession();
+
+  await prisma.session.deleteMany({
+    where: {
+      userId: user.id,
+      ...(current ? { id: { not: current.id } } : {}),
+    },
+  });
+
+  revalidatePath("/account");
+  redirect("/account?saved=sessions");
 }
