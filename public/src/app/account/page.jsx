@@ -59,7 +59,9 @@ export default async function AccountPage({ searchParams }) {
               ? "Session revoked."
               : params.saved === "sessions"
                 ? "Other sessions signed out."
-                : "Account updated."}
+                : params.saved === "email-verified"
+                  ? "Email address verified."
+                  : "Account updated."}
         </p>
       ) : null}
 
