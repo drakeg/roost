@@ -1,6 +1,6 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
@@ -30,8 +30,11 @@ export async function createSession(userId) {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
 
+  const requestHeaders = await headers();
+  const userAgent = requestHeaders.get("user-agent")?.slice(0, 500) || null;
+
   await prisma.session.create({
-    data: { tokenHash: hashToken(token), userId, expiresAt },
+    data: { tokenHash: hashToken(token), userId, expiresAt, userAgent },
   });
 
   const store = await cookies();
@@ -55,7 +58,7 @@ export async function destroySession() {
   store.delete(SESSION_COOKIE);
 }
 
-export async function getCurrentUser() {
+export async function getCurrentSession() {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -71,6 +74,13 @@ export async function getCurrentUser() {
     }
     return null;
   }
+
+  return session;
+}
+
+export async function getCurrentUser() {
+  const session = await getCurrentSession();
+  if (!session) return null;
 
   const { password, ...user } = session.user;
   return user;
