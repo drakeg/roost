@@ -23,12 +23,18 @@ export default async function MyListingsPage() {
           {listings.map((listing) => (
             <div key={listing.id} className="space-y-3">
               <ListingCard listing={listing} />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Link
                   href={`/my-listings/${listing.id}/edit`}
                   className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
                 >
                   Edit listing
+                </Link>
+                <Link
+                  href={`/my-listings/${listing.id}/availability`}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+                >
+                  Availability
                 </Link>
                 <form action={setListingActive}>
                   <input type="hidden" name="listingId" value={listing.id} />
