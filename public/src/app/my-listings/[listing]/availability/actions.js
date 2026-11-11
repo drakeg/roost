@@ -23,15 +23,12 @@ export async function createListingBlock(formData) {
     redirect(`/my-listings/${listingId}/availability?error=Choose%20a%20valid%20future%20date%20range`);
   }
 
-  const listing = await prisma.listing.findFirst({
-    where: {
-      id: listingId,
-      OR: [{ ownerId: user.id }, ...(user.role === "ADMIN" ? [{ id: listingId }] : [])],
-    },
-    select: { id: true },
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: { id: true, ownerId: true },
   });
 
-  if (!listing) {
+  if (!listing || (listing.ownerId !== user.id && user.role !== "ADMIN")) {
     redirect("/my-listings");
   }
 
@@ -86,17 +83,16 @@ export async function deleteListingBlock(formData) {
   const user = await requireUser();
   const blockId = String(formData.get("blockId") ?? "");
 
-  const block = await prisma.listingBlock.findFirst({
-    where: {
-      id: blockId,
-      listing: {
-        OR: [{ ownerId: user.id }, ...(user.role === "ADMIN" ? [{ id: { not: "" } }] : [])],
-      },
+  const block = await prisma.listingBlock.findUnique({
+    where: { id: blockId },
+    select: {
+      id: true,
+      listingId: true,
+      listing: { select: { ownerId: true } },
     },
-    select: { id: true, listingId: true },
   });
 
-  if (!block) {
+  if (!block || (block.listing.ownerId !== user.id && user.role !== "ADMIN")) {
     redirect("/my-listings");
   }
 
