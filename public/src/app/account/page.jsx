@@ -1,11 +1,49 @@
-import { requireUser } from "@/lib/auth";
-import { changePassword, updateProfile } from "./actions";
+import { getCurrentSession, requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { changePassword, revokeOtherSessions, revokeSession, updateProfile } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+function describeSession(userAgent) {
+  const value = userAgent ?? "";
+
+  let browser = "Unknown browser";
+  if (/Edg\//.test(value)) browser = "Microsoft Edge";
+  else if (/Chrome\//.test(value) && !/Edg\//.test(value)) browser = "Chrome";
+  else if (/Firefox\//.test(value)) browser = "Firefox";
+  else if (/Safari\//.test(value) && !/Chrome\//.test(value)) browser = "Safari";
+
+  let device = "Unknown device";
+  if (/iPhone/i.test(value)) device = "iPhone";
+  else if (/iPad/i.test(value)) device = "iPad";
+  else if (/Android/i.test(value)) device = "Android";
+  else if (/Macintosh|Mac OS X/i.test(value)) device = "Mac";
+  else if (/Windows/i.test(value)) device = "Windows PC";
+  else if (/Linux/i.test(value)) device = "Linux";
+
+  return `${browser} on ${device}`;
+}
+
+function formatSessionDate(value) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(value);
+}
+
 export default async function AccountPage({ searchParams }) {
   const user = await requireUser();
+  const currentSession = await getCurrentSession();
   const params = await searchParams;
+
+  const sessions = await prisma.session.findMany({
+    where: {
+      userId: user.id,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-10">
@@ -15,7 +53,13 @@ export default async function AccountPage({ searchParams }) {
 
       {params?.saved ? (
         <p className="mt-5 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">
-          Profile updated.
+          {params.saved === "profile"
+            ? "Profile updated."
+            : params.saved === "session"
+              ? "Session revoked."
+              : params.saved === "sessions"
+                ? "Other sessions signed out."
+                : "Account updated."}
         </p>
       ) : null}
 
@@ -68,6 +112,63 @@ export default async function AccountPage({ searchParams }) {
             Save profile
           </button>
         </form>
+
+
+        <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold">Active sessions</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Review signed-in devices and revoke access you no longer recognize.
+              </p>
+            </div>
+            {sessions.length > 1 ? (
+              <form action={revokeOtherSessions}>
+                <button className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">
+                  Sign out everywhere else
+                </button>
+              </form>
+            ) : null}
+          </div>
+
+          <div className="space-y-3">
+            {sessions.map((session) => {
+              const isCurrent = session.id === currentSession?.id;
+
+              return (
+                <article
+                  key={session.id}
+                  className="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold">{describeSession(session.userAgent)}</p>
+                      {isCurrent ? (
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                          Current session
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Signed in {formatSessionDate(session.createdAt)} · Expires{" "}
+                      {formatSessionDate(session.expiresAt)}
+                    </p>
+                  </div>
+
+                  {!isCurrent ? (
+                    <form action={revokeSession}>
+                      <input type="hidden" name="sessionId" value={session.id} />
+                      <button className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-red-300 hover:text-red-700">
+                        Revoke
+                      </button>
+                    </form>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
 
         <form action={changePassword} className="space-y-5 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
           <div>
