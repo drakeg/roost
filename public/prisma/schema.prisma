@@ -149,6 +149,7 @@ model PasswordResetToken {
 model EmailVerificationToken {
   id        String   @id @default(cuid())
   tokenHash String   @unique
+  email     String
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
