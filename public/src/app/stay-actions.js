@@ -90,18 +90,31 @@ export async function createTrip(formData) {
     try {
       booked = await prisma.$transaction(
         async (tx) => {
-          const conflict = await tx.trip.findFirst({
-            where: {
-              listingId,
-              status: { in: ["PENDING", "CONFIRMED"] },
-              AND: [
-                { startsAt: { lt: endsAt } },
-                { endsAt: { gt: startsAt } },
-              ],
-            },
-          });
+          const [tripConflict, blocked] = await Promise.all([
+            tx.trip.findFirst({
+              where: {
+                listingId,
+                status: { in: ["PENDING", "CONFIRMED"] },
+                AND: [
+                  { startsAt: { lt: endsAt } },
+                  { endsAt: { gt: startsAt } },
+                ],
+              },
+              select: { id: true },
+            }),
+            tx.listingBlock.findFirst({
+              where: {
+                listingId,
+                AND: [
+                  { startsAt: { lt: endsAt } },
+                  { endsAt: { gt: startsAt } },
+                ],
+              },
+              select: { id: true },
+            }),
+          ]);
 
-          if (conflict) {
+          if (tripConflict || blocked) {
             return false;
           }
 
