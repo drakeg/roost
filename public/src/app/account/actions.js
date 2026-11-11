@@ -49,6 +49,11 @@ export async function updateProfile(formData) {
 
   revalidatePath("/account");
   revalidatePath("/");
+
+  if (emailChanged && email) {
+    redirect("/account?verify=sent");
+  }
+
   redirect("/account?saved=profile");
 }
 
