@@ -38,6 +38,7 @@ export async function issueEmailVerification(userId, email) {
     prisma.emailVerificationToken.create({
       data: {
         tokenHash: hashToken(token),
+        email,
         userId,
         expiresAt,
       },
@@ -61,11 +62,21 @@ export async function consumeEmailVerification(token) {
   const record = token
     ? await prisma.emailVerificationToken.findUnique({
         where: { tokenHash },
-        select: { id: true, userId: true, expiresAt: true },
+        select: {
+          id: true,
+          userId: true,
+          email: true,
+          expiresAt: true,
+          user: { select: { email: true } },
+        },
       })
     : null;
 
-  if (!record || record.expiresAt <= new Date()) {
+  if (
+    !record ||
+    record.expiresAt <= new Date() ||
+    record.user.email !== record.email
+  ) {
     if (record) {
       await prisma.emailVerificationToken.delete({ where: { id: record.id } });
     }
