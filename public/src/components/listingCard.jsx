@@ -1,11 +1,25 @@
 import Link from "next/link";
 
-export default function ListingCard({ listing }) {
+export default function ListingCard({ listing, searchParams = {} }) {
   const cover = listing.photos?.[0];
+  const params = new URLSearchParams();
+
+  if (searchParams.startsAt && searchParams.endsAt) {
+    params.set("startsAt", searchParams.startsAt);
+    params.set("endsAt", searchParams.endsAt);
+  }
+
+  if (searchParams.guests) {
+    params.set("guests", searchParams.guests);
+  }
+
+  const listingHref = params.size
+    ? `/listing/${listing.id}?${params.toString()}`
+    : `/listing/${listing.id}`;
 
   return (
     <article className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-      <Link href={`/listing/${listing.id}`} className="block">
+      <Link href={listingHref} className="block">
         <div className="relative h-52 overflow-hidden bg-gradient-to-br from-sky-200 via-indigo-100 to-amber-100">
           {cover ? (
             <img
