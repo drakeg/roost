@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { destroySession, getCurrentSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
+import { issueEmailVerification } from "@/lib/email-verification";
 
 export async function updateProfile(formData) {
   const user = await requireUser();
@@ -30,14 +31,21 @@ export async function updateProfile(formData) {
     }
   }
 
+  const emailChanged = (user.email ?? "") !== email;
+
   await prisma.user.update({
     where: { id: user.id },
     data: {
       email: email || null,
+      emailVerifiedAt: emailChanged ? null : user.emailVerifiedAt,
       firstName: firstName || null,
       lastName: lastName || null,
     },
   });
+
+  if (emailChanged && email) {
+    await issueEmailVerification(user.id, email);
+  }
 
   revalidatePath("/account");
   revalidatePath("/");
@@ -114,4 +122,20 @@ export async function revokeOtherSessions() {
 
   revalidatePath("/account");
   redirect("/account?saved=sessions");
+}
+
+
+export async function resendEmailVerification() {
+  const user = await requireUser();
+
+  if (!user.email) {
+    redirect("/account?error=Add%20an%20email%20address%20first");
+  }
+
+  if (user.emailVerifiedAt) {
+    redirect("/account?saved=email-verified");
+  }
+
+  await issueEmailVerification(user.id, user.email);
+  redirect("/account?verify=sent");
 }
