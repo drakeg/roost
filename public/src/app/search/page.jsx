@@ -1,5 +1,6 @@
 import ListingCard from "@/components/listingCard";
 import { getListingFilterOptions, getListings } from "@/lib/listings";
+import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -9,14 +10,34 @@ export default async function SearchPage({ searchParams }) {
   const placeType = params?.type ?? "";
   const guests = params?.guests ?? "";
   const maxPrice = params?.maxPrice ?? "";
+  const startsAt = params?.startsAt ?? "";
+  const endsAt = params?.endsAt ?? "";
   const sort = params?.sort ?? "recommended";
 
+  const parsedStart = parseDateInput(startsAt);
+  const parsedEnd = parseDateInput(endsAt);
+  const validAvailabilityWindow = Boolean(
+    parsedStart &&
+    parsedEnd &&
+    parsedStart >= todayUtc() &&
+    parsedEnd > parsedStart
+  );
+  const hasPartialOrInvalidDates = Boolean(
+    (startsAt || endsAt) && !validAvailabilityWindow
+  );
+  const minimumDate = toDateInputValue(todayUtc());
+
   const [listings, filters] = await Promise.all([
-    getListings({ query, placeType, guests, maxPrice, sort }),
+    getListings({ query, placeType, guests, maxPrice, startsAt, endsAt, sort }),
     getListingFilterOptions(),
   ]);
 
-  const activeFilterCount = [placeType, guests, maxPrice].filter(Boolean).length;
+  const activeFilterCount = [
+    placeType,
+    guests,
+    maxPrice,
+    validAvailabilityWindow,
+  ].filter(Boolean).length;
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-10">
@@ -34,7 +55,13 @@ export default async function SearchPage({ searchParams }) {
           </div>
         </div>
 
-        <form className="mt-6 grid gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-6">
+        {hasPartialOrInvalidDates ? (
+          <p className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+            Choose both check-in and check-out, with check-out after check-in. Availability was not applied.
+          </p>
+        ) : null}
+
+        <form className="mt-6 grid gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-8">
           <label className="xl:col-span-2">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
               Where or what
@@ -61,6 +88,32 @@ export default async function SearchPage({ searchParams }) {
                 <option key={type} value={type}>{type}</option>
               ))}
             </select>
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Check in
+            </span>
+            <input
+              type="date"
+              name="startsAt"
+              defaultValue={startsAt}
+              min={minimumDate}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            />
+          </label>
+
+          <label>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Check out
+            </span>
+            <input
+              type="date"
+              name="endsAt"
+              defaultValue={endsAt}
+              min={startsAt || minimumDate}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3"
+            />
           </label>
 
           <label>
@@ -133,7 +186,15 @@ export default async function SearchPage({ searchParams }) {
       {listings.length ? (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              searchParams={{
+                startsAt: validAvailabilityWindow ? startsAt : "",
+                endsAt: validAvailabilityWindow ? endsAt : "",
+                guests,
+              }}
+            />
           ))}
         </div>
       ) : (

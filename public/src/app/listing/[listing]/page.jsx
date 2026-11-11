@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toggleWishlist } from "@/app/stay-actions";
 import BookingForm from "./components/BookingForm";
-import { toDateInputValue, todayUtc } from "@/lib/pricing";
+import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +60,22 @@ export default async function ListingPage({ params, searchParams }) {
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   const dayAfter = todayUtc();
   dayAfter.setUTCDate(dayAfter.getUTCDate() + 2);
+
+  const searchedStart = parseDateInput(query?.startsAt);
+  const searchedEnd = parseDateInput(query?.endsAt);
+  const searchedGuests = Number.parseInt(String(query?.guests ?? "1"), 10);
+  const validSearchDates = Boolean(
+    searchedStart &&
+    searchedEnd &&
+    searchedEnd > searchedStart &&
+    searchedStart >= todayUtc()
+  );
+
+  const defaultStart = validSearchDates ? searchedStart : tomorrow;
+  const defaultEnd = validSearchDates ? searchedEnd : dayAfter;
+  const defaultGuests = Number.isFinite(searchedGuests)
+    ? Math.min(Math.max(searchedGuests, 1), listing.guests)
+    : 1;
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-10">
@@ -119,7 +135,7 @@ export default async function ListingPage({ params, searchParams }) {
               </div>
               {listing.rating > 0 ? (
                 <p className="font-semibold">
-                  ★ {listing.rating.toFixed(1)} · {reviews.length} review
+                  ★ {listing.rating.toFixed(1)} · {reviewCount} review
                   {reviewCount === 1 ? "" : "s"}
                 </p>
               ) : null}
@@ -204,9 +220,10 @@ export default async function ListingPage({ params, searchParams }) {
             <BookingForm
               listingId={listing.id}
               nightlyRate={listing.price}
-              defaultStart={toDateInputValue(tomorrow)}
-              defaultEnd={toDateInputValue(dayAfter)}
+              defaultStart={toDateInputValue(defaultStart)}
+              defaultEnd={toDateInputValue(defaultEnd)}
               maxGuests={listing.guests}
+              defaultGuests={defaultGuests}
             />
           ) : (
             <Link

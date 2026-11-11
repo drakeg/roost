@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseDateInput } from "@/lib/pricing";
 
 function toListingCard(listing) {
   return {
@@ -27,10 +28,19 @@ export async function getListings({
   placeType = "",
   guests = "",
   maxPrice = "",
+  startsAt = "",
+  endsAt = "",
   sort = "recommended",
 } = {}) {
   const minimumGuests = Number.parseInt(guests, 10);
   const maximumPrice = Number.parseInt(maxPrice, 10);
+  const startDate = parseDateInput(startsAt);
+  const endDate = parseDateInput(endsAt);
+  const hasAvailabilityWindow = Boolean(
+    startDate &&
+    endDate &&
+    endDate > startDate
+  );
 
   const listings = await prisma.listing.findMany({
     where: {
@@ -49,6 +59,19 @@ export async function getListings({
       ...(placeType ? { placeType } : {}),
       ...(Number.isFinite(minimumGuests) ? { guests: { gte: minimumGuests } } : {}),
       ...(Number.isFinite(maximumPrice) ? { price: { lte: maximumPrice } } : {}),
+      ...(hasAvailabilityWindow
+        ? {
+            trips: {
+              none: {
+                status: { in: ["PENDING", "CONFIRMED"] },
+                AND: [
+                  { startsAt: { lt: endDate } },
+                  { endsAt: { gt: startDate } },
+                ],
+              },
+            },
+          }
+        : {}),
     },
     include: { owner: true },
   });
