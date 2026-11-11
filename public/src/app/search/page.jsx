@@ -1,5 +1,6 @@
 import ListingCard from "@/components/listingCard";
 import { getListingFilterOptions, getListings } from "@/lib/listings";
+import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +14,30 @@ export default async function SearchPage({ searchParams }) {
   const endsAt = params?.endsAt ?? "";
   const sort = params?.sort ?? "recommended";
 
+  const parsedStart = parseDateInput(startsAt);
+  const parsedEnd = parseDateInput(endsAt);
+  const validAvailabilityWindow = Boolean(
+    parsedStart &&
+    parsedEnd &&
+    parsedStart >= todayUtc() &&
+    parsedEnd > parsedStart
+  );
+  const hasPartialOrInvalidDates = Boolean(
+    (startsAt || endsAt) && !validAvailabilityWindow
+  );
+  const minimumDate = toDateInputValue(todayUtc());
+
   const [listings, filters] = await Promise.all([
     getListings({ query, placeType, guests, maxPrice, startsAt, endsAt, sort }),
     getListingFilterOptions(),
   ]);
 
-  const activeFilterCount = [placeType, guests, maxPrice, startsAt && endsAt].filter(Boolean).length;
+  const activeFilterCount = [
+    placeType,
+    guests,
+    maxPrice,
+    validAvailabilityWindow,
+  ].filter(Boolean).length;
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-10">
@@ -35,6 +54,12 @@ export default async function SearchPage({ searchParams }) {
             </p>
           </div>
         </div>
+
+        {hasPartialOrInvalidDates ? (
+          <p className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+            Choose both check-in and check-out, with check-out after check-in. Availability was not applied.
+          </p>
+        ) : null}
 
         <form className="mt-6 grid gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-8">
           <label className="xl:col-span-2">
@@ -73,6 +98,7 @@ export default async function SearchPage({ searchParams }) {
               type="date"
               name="startsAt"
               defaultValue={startsAt}
+              min={minimumDate}
               className="w-full rounded-xl border border-slate-300 px-4 py-3"
             />
           </label>
@@ -85,7 +111,7 @@ export default async function SearchPage({ searchParams }) {
               type="date"
               name="endsAt"
               defaultValue={endsAt}
-              min={startsAt || undefined}
+              min={startsAt || minimumDate}
               className="w-full rounded-xl border border-slate-300 px-4 py-3"
             />
           </label>
@@ -163,7 +189,11 @@ export default async function SearchPage({ searchParams }) {
             <ListingCard
               key={listing.id}
               listing={listing}
-              searchParams={{ startsAt, endsAt, guests }}
+              searchParams={{
+                startsAt: validAvailabilityWindow ? startsAt : "",
+                endsAt: validAvailabilityWindow ? endsAt : "",
+                guests,
+              }}
             />
           ))}
         </div>
