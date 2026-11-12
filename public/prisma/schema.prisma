@@ -184,6 +184,7 @@ model ReservationMessage {
   tripId    String
   senderId  String
   body      String
+  readAt    DateTime?
   trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
