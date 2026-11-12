@@ -36,6 +36,7 @@ model User {
   reviews   Review[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  sentReservationMessages ReservationMessage[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -96,6 +97,7 @@ model Trip {
   guests      Int?
   createdAt   DateTime @default(now())
   review    Review?
+  messages  ReservationMessage[]
   updatedAt DateTime @updatedAt
 
   @@index([userId])
@@ -174,4 +176,18 @@ model ListingBlock {
   @@index([listingId])
   @@index([startsAt])
   @@index([endsAt])
+}
+
+
+model ReservationMessage {
+  id        String   @id @default(cuid())
+  tripId    String
+  senderId  String
+  body      String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([tripId, createdAt])
+  @@index([senderId])
 }
