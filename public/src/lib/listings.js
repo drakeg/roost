@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { parseDateInput } from "@/lib/pricing";
+import { parseAmenities } from "@/lib/amenities";
 
 function toListingCard(listing) {
   return {
@@ -20,6 +21,7 @@ function toListingCard(listing) {
     featured: listing.featured,
     active: listing.active,
     photos: Array.isArray(listing.photos) ? listing.photos : [],
+    amenities: listing.amenities ?? [],
   };
 }
 
@@ -30,10 +32,12 @@ export async function getListings({
   maxPrice = "",
   startsAt = "",
   endsAt = "",
+  amenities = [],
   sort = "recommended",
 } = {}) {
   const minimumGuests = Number.parseInt(guests, 10);
   const maximumPrice = Number.parseInt(maxPrice, 10);
+  const requestedAmenities = parseAmenities(amenities);
   const startDate = parseDateInput(startsAt);
   const endDate = parseDateInput(endsAt);
   const hasAvailabilityWindow = Boolean(
@@ -59,6 +63,7 @@ export async function getListings({
       ...(placeType ? { placeType } : {}),
       ...(Number.isFinite(minimumGuests) ? { guests: { gte: minimumGuests } } : {}),
       ...(Number.isFinite(maximumPrice) ? { price: { lte: maximumPrice } } : {}),
+      ...(requestedAmenities.length ? { amenities: { hasEvery: requestedAmenities } } : {}),
       ...(hasAvailabilityWindow
         ? {
             AND: [
