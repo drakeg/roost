@@ -127,7 +127,7 @@ export async function createTrip(formData) {
             return false;
           }
 
-          await tx.trip.create({
+          const trip = await tx.trip.create({
             data: {
               userId: user.id,
               listingId,
@@ -137,6 +137,15 @@ export async function createTrip(formData) {
               nights,
               totalPrice,
               guests,
+            },
+          });
+
+          await tx.reservationEvent.create({
+            data: {
+              tripId: trip.id,
+              actorId: user.id,
+              fromStatus: null,
+              toStatus: "PENDING",
             },
           });
 
@@ -167,13 +176,31 @@ export async function cancelTrip(formData) {
   const user = await requireUser();
   const tripId = String(formData.get("tripId") ?? "");
 
-  await prisma.trip.updateMany({
-    where: {
-      id: tripId,
-      userId: user.id,
-      status: { in: ["PENDING", "CONFIRMED"] },
-    },
-    data: { status: "CANCELLED" },
+  await prisma.$transaction(async (tx) => {
+    const trip = await tx.trip.findFirst({
+      where: {
+        id: tripId,
+        userId: user.id,
+        status: { in: ["PENDING", "CONFIRMED"] },
+      },
+      select: { id: true, status: true },
+    });
+
+    if (!trip) return;
+
+    await tx.trip.update({
+      where: { id: trip.id },
+      data: { status: "CANCELLED" },
+    });
+
+    await tx.reservationEvent.create({
+      data: {
+        tripId: trip.id,
+        actorId: user.id,
+        fromStatus: trip.status,
+        toStatus: "CANCELLED",
+      },
+    });
   });
 
   revalidatePath("/trips");
