@@ -46,6 +46,7 @@ export default async function HostReservationsPage() {
           lastName: true,
         },
       },
+      _count: { select: { messages: true } },
     },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
@@ -108,6 +109,12 @@ export default async function HostReservationsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 self-center">
+                  <Link
+                    href={`/reservations/${trip.id}/messages`}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+                  >
+                    Messages{trip._count.messages ? ` (${trip._count.messages})` : ""}
+                  </Link>
                   {trip.status === "PENDING" ? (
                     <>
                       <form action={confirmReservation}>
