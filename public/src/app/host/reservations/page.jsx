@@ -46,7 +46,16 @@ export default async function HostReservationsPage() {
           lastName: true,
         },
       },
-      _count: { select: { messages: true } },
+      _count: {
+        select: {
+          messages: {
+            where: {
+              readAt: null,
+              senderId: { not: host.id },
+            },
+          },
+        },
+      },
     },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
@@ -113,7 +122,7 @@ export default async function HostReservationsPage() {
                     href={`/reservations/${trip.id}/messages`}
                     className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
                   >
-                    Messages{trip._count.messages ? ` (${trip._count.messages})` : ""}
+                    Messages{trip._count.messages ? ` · ${trip._count.messages} unread` : ""}
                   </Link>
                   {trip.status === "PENDING" ? (
                     <>
