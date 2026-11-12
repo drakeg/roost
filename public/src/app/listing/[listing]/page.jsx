@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { toggleWishlist } from "@/app/stay-actions";
 import BookingForm from "./components/BookingForm";
 import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
+import { amenityLabel } from "@/lib/amenities";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +123,22 @@ export default async function ListingPage({ params, searchParams }) {
           <p className="mt-8 max-w-3xl text-lg leading-8 text-slate-700">
             {listing.description}
           </p>
+          {listing.amenities.length ? (
+            <section className="mt-8 border-t border-slate-200 pt-6">
+              <h2 className="text-xl font-bold">What this place offers</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {listing.amenities.map((amenity) => (
+                  <div
+                    key={amenity}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium"
+                  >
+                    {amenityLabel(amenity)}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <div className="mt-8 border-t border-slate-200 pt-6">
             <p className="text-sm text-slate-500">Hosted by</p>
             <p className="font-semibold">{listing.owner}</p>
