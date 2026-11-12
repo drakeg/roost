@@ -61,15 +61,29 @@ export async function getListings({
       ...(Number.isFinite(maximumPrice) ? { price: { lte: maximumPrice } } : {}),
       ...(hasAvailabilityWindow
         ? {
-            trips: {
-              none: {
-                status: { in: ["PENDING", "CONFIRMED"] },
-                AND: [
-                  { startsAt: { lt: endDate } },
-                  { endsAt: { gt: startDate } },
-                ],
+            AND: [
+              {
+                trips: {
+                  none: {
+                    status: { in: ["PENDING", "CONFIRMED"] },
+                    AND: [
+                      { startsAt: { lt: endDate } },
+                      { endsAt: { gt: startDate } },
+                    ],
+                  },
+                },
               },
-            },
+              {
+                blocks: {
+                  none: {
+                    AND: [
+                      { startsAt: { lt: endDate } },
+                      { endsAt: { gt: startDate } },
+                    ],
+                  },
+                },
+              },
+            ],
           }
         : {}),
     },
