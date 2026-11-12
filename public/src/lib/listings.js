@@ -2,6 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { parseDateInput } from "@/lib/pricing";
 import { parseAmenities } from "@/lib/amenities";
 
+function ownerDisplayName(owner) {
+  const fullName = [owner?.firstName, owner?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return fullName || owner?.username || "Roost host";
+}
+
 function toListingCard(listing) {
   return {
     id: listing.id,
@@ -14,10 +23,7 @@ function toListingCard(listing) {
     guests: listing.guests,
     bedrooms: listing.bedrooms,
     rating: listing.rating,
-    owner:
-      listing.owner?.username ??
-      [listing.owner?.firstName, listing.owner?.lastName].filter(Boolean).join(" ") ??
-      "Roost host",
+    owner: ownerDisplayName(listing.owner),
     featured: listing.featured,
     active: listing.active,
     photos: Array.isArray(listing.photos) ? listing.photos : [],
