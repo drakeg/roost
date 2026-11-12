@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import {
   displayPerson,
+  markReservationMessagesRead,
   requireReservationThread,
 } from "@/lib/reservation-messages";
 import { sendReservationMessage } from "./actions";
@@ -30,6 +31,7 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
   const { trip: tripId } = await params;
   const query = await searchParams;
   const trip = await requireReservationThread(tripId, user);
+  await markReservationMessagesRead(trip, user);
 
   const isGuest = trip.userId === user.id;
   const otherParty = isGuest ? trip.listing.owner : trip.user;
@@ -80,6 +82,7 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
                   </p>
                   <p className="text-xs opacity-60">
                     {formatDateTime(message.createdAt)}
+                    {mine && message.readAt ? " · Read" : ""}
                   </p>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap break-words leading-6">
