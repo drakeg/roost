@@ -32,7 +32,16 @@ export default async function TripsPage() {
     include: {
       listing: true,
       review: true,
-      _count: { select: { messages: true } },
+      _count: {
+        select: {
+          messages: {
+            where: {
+              readAt: null,
+              senderId: { not: user.id },
+            },
+          },
+        },
+      },
     },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
@@ -78,7 +87,7 @@ export default async function TripsPage() {
                 href={`/reservations/${trip.id}/messages`}
                 className="block w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
               >
-                Messages{trip._count.messages ? ` (${trip._count.messages})` : ""}
+                Messages{trip._count.messages ? ` · ${trip._count.messages} unread` : ""}
               </Link>
               {["PENDING", "CONFIRMED"].includes(trip.status) &&
               (!trip.endsAt || trip.endsAt >= todayUtc()) ? (
