@@ -26,6 +26,15 @@ export async function toggleWishlist(formData) {
   if (existing) {
     await prisma.wishlist.delete({ where: { id: existing.id } });
   } else {
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+      select: { active: true },
+    });
+
+    if (!listing?.active) {
+      throw new Error("This listing is not available to save.");
+    }
+
     await prisma.wishlist.create({
       data: {
         userId: user.id,
