@@ -29,7 +29,11 @@ export default async function TripsPage() {
 
   const trips = await prisma.trip.findMany({
     where: { userId: user.id },
-    include: { listing: true, review: true },
+    include: {
+      listing: true,
+      review: true,
+      _count: { select: { messages: true } },
+    },
     orderBy: [{ startsAt: "asc" }, { createdAt: "desc" }],
   });
 
@@ -70,6 +74,12 @@ export default async function TripsPage() {
             </div>
 
             <div className="w-full space-y-3 sm:w-auto sm:min-w-64">
+              <Link
+                href={`/reservations/${trip.id}/messages`}
+                className="block w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+              >
+                Messages{trip._count.messages ? ` (${trip._count.messages})` : ""}
+              </Link>
               {["PENDING", "CONFIRMED"].includes(trip.status) &&
               (!trip.endsAt || trip.endsAt >= todayUtc()) ? (
                 <form action={cancelTrip}>
