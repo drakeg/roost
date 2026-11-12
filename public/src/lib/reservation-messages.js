@@ -68,3 +68,21 @@ export async function requireReservationThread(tripId, user) {
   if (!trip) redirect("/trips");
   return trip;
 }
+
+
+export async function markReservationMessagesRead(trip, user) {
+  const isParticipant =
+    trip.userId === user.id ||
+    trip.listing.ownerId === user.id;
+
+  if (!isParticipant) return;
+
+  await prisma.reservationMessage.updateMany({
+    where: {
+      tripId: trip.id,
+      senderId: { not: user.id },
+      readAt: null,
+    },
+    data: { readAt: new Date() },
+  });
+}
