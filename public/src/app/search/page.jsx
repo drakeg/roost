@@ -1,6 +1,7 @@
 import ListingCard from "@/components/listingCard";
 import { getListingFilterOptions, getListings } from "@/lib/listings";
 import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
+import { AMENITIES, parseAmenities } from "@/lib/amenities";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,13 @@ export default async function SearchPage({ searchParams }) {
   const maxPrice = params?.maxPrice ?? "";
   const startsAt = params?.startsAt ?? "";
   const endsAt = params?.endsAt ?? "";
+  const selectedAmenities = parseAmenities(
+    Array.isArray(params?.amenities)
+      ? params.amenities
+      : params?.amenities
+        ? [params.amenities]
+        : []
+  );
   const sort = params?.sort ?? "recommended";
 
   const parsedStart = parseDateInput(startsAt);
@@ -28,7 +36,16 @@ export default async function SearchPage({ searchParams }) {
   const minimumDate = toDateInputValue(todayUtc());
 
   const [listings, filters] = await Promise.all([
-    getListings({ query, placeType, guests, maxPrice, startsAt, endsAt, sort }),
+    getListings({
+      query,
+      placeType,
+      guests,
+      maxPrice,
+      startsAt,
+      endsAt,
+      amenities: selectedAmenities,
+      sort,
+    }),
     getListingFilterOptions(),
   ]);
 
@@ -37,6 +54,7 @@ export default async function SearchPage({ searchParams }) {
     guests,
     maxPrice,
     validAvailabilityWindow,
+    selectedAmenities.length ? true : false,
   ].filter(Boolean).length;
 
   return (
@@ -153,6 +171,28 @@ export default async function SearchPage({ searchParams }) {
               Apply
             </button>
           </div>
+
+          <fieldset className="md:col-span-2 xl:col-span-6">
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Amenities
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {AMENITIES.map((amenity) => (
+                <label
+                  key={amenity.value}
+                  className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name="amenities"
+                    value={amenity.value}
+                    defaultChecked={selectedAmenities.includes(amenity.value)}
+                  />
+                  <span>{amenity.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           <label className="md:col-span-2 xl:col-span-2">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
