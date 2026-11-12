@@ -41,6 +41,19 @@ export async function getReservationThreadForUser(tripId, user) {
         },
         orderBy: { createdAt: "asc" },
       },
+      events: {
+        include: {
+          actor: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
