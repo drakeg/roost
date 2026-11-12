@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { createListing } from "./actions";
+import { AMENITIES } from "@/lib/amenities";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,26 @@ export default async function NewListingPage() {
             />
           </label>
         ))}
+        <fieldset>
+          <legend className="mb-3 text-sm font-semibold">Amenities</legend>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {AMENITIES.map((amenity) => (
+              <label
+                key={amenity.value}
+                className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3"
+              >
+                <input
+                  type="checkbox"
+                  name="amenities"
+                  value={amenity.value}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm font-medium">{amenity.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <label className="block">
           <span className="mb-2 block text-sm font-semibold">Photo URLs</span>
           <textarea

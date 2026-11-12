@@ -55,6 +55,7 @@ model Listing {
   active       Boolean    @default(true)
   mapData      Json?
   photos       Json?
+  amenities    String[]   @default([])
   ownerId      String?
   owner        User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   trips        Trip[]
