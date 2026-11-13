@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { notifyReservationUser } from "@/lib/reservation-notifications";
 
 async function updateHostedReservation(tripId, status) {
   const host = await requireUser();
 
   if (!tripId) return;
 
-  await prisma.$transaction(async (tx) => {
+  const updatedTrip = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
       where: {
         id: tripId,
@@ -18,10 +19,10 @@ async function updateHostedReservation(tripId, status) {
           ownerId: host.id,
         },
       },
-      select: { id: true, status: true },
+      select: { id: true, status: true, userId: true },
     });
 
-    if (!trip) return;
+    if (!trip) return null;
 
     await tx.trip.update({
       where: { id: trip.id },
@@ -36,7 +37,23 @@ async function updateHostedReservation(tripId, status) {
         toStatus: status,
       },
     });
+
+    return trip;
   });
+
+  if (updatedTrip) {
+    const confirmed = status === "CONFIRMED";
+    await notifyReservationUser({
+      tripId: updatedTrip.id,
+      userId: updatedTrip.userId,
+      subject: confirmed
+        ? "Your Roost reservation was confirmed"
+        : "Your Roost reservation was declined",
+      message: confirmed
+        ? "Your host confirmed your reservation request."
+        : "Your host declined your reservation request.",
+    });
+  }
 
   revalidatePath("/host/reservations");
   revalidatePath("/trips");
@@ -62,7 +79,7 @@ export async function cancelHostedReservation(formData) {
 
   if (!tripId) return;
 
-  await prisma.$transaction(async (tx) => {
+  const cancelledTrip = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
       where: {
         id: tripId,
@@ -71,10 +88,10 @@ export async function cancelHostedReservation(formData) {
           ownerId: host.id,
         },
       },
-      select: { id: true, status: true },
+      select: { id: true, status: true, userId: true },
     });
 
-    if (!trip) return;
+    if (!trip) return null;
 
     await tx.trip.update({
       where: { id: trip.id },
@@ -89,7 +106,18 @@ export async function cancelHostedReservation(formData) {
         toStatus: "CANCELLED",
       },
     });
+
+    return trip;
   });
+
+  if (cancelledTrip) {
+    await notifyReservationUser({
+      tripId: cancelledTrip.id,
+      userId: cancelledTrip.userId,
+      subject: "Your Roost reservation was cancelled",
+      message: "Your host cancelled this reservation.",
+    });
+  }
 
   revalidatePath("/host/reservations");
   revalidatePath("/trips");
