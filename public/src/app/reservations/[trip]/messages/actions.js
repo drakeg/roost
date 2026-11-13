@@ -37,7 +37,11 @@ export async function sendReservationMessage(formData) {
   });
 
   const recipientUserId =
-    trip.userId === user.id ? trip.listing.ownerId : trip.userId;
+    trip.userId === user.id
+      ? trip.listing.ownerId
+      : trip.listing.ownerId === user.id
+        ? trip.userId
+        : null;
 
   if (recipientUserId) {
     await notifyReservationUser({
