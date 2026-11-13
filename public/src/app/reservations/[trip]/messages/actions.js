@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { getReservationThreadForUser } from "@/lib/reservation-messages";
+import { notifyReservationUser } from "@/lib/reservation-notifications";
 
 export async function sendReservationMessage(formData) {
   const user = await requireUser();
@@ -34,6 +35,18 @@ export async function sendReservationMessage(formData) {
       body,
     },
   });
+
+  const recipientUserId =
+    trip.userId === user.id ? trip.listing.ownerId : trip.userId;
+
+  if (recipientUserId) {
+    await notifyReservationUser({
+      tripId,
+      userId: recipientUserId,
+      subject: "New message about your Roost reservation",
+      message: "You have a new message in a reservation conversation.",
+    });
+  }
 
   revalidatePath(`/reservations/${tripId}/messages`);
   revalidatePath("/trips");
