@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { calculateNights, parseDateInput, todayUtc } from "@/lib/pricing";
+import { notifyReservationUser } from "@/lib/reservation-notifications";
 
 export async function toggleWishlist(formData) {
   const user = await requireUser();
@@ -93,11 +94,11 @@ export async function createTrip(formData) {
   const nightlyRate = listing.price;
   const totalPrice = nightlyRate * nights;
 
-  let booked = false;
+  let bookedTripId = null;
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      booked = await prisma.$transaction(
+      bookedTripId = await prisma.$transaction(
         async (tx) => {
           const [tripConflict, blocked] = await Promise.all([
             tx.trip.findFirst({
@@ -124,7 +125,7 @@ export async function createTrip(formData) {
           ]);
 
           if (tripConflict || blocked) {
-            return false;
+            return null;
           }
 
           const trip = await tx.trip.create({
@@ -149,7 +150,7 @@ export async function createTrip(formData) {
             },
           });
 
-          return true;
+          return trip.id;
         },
         {
           isolationLevel: "Serializable",
@@ -164,11 +165,19 @@ export async function createTrip(formData) {
     }
   }
 
-  if (!booked) {
+  if (!bookedTripId) {
     redirect(`/listing/${listingId}?error=Those%20dates%20are%20not%20available`);
   }
 
+  await notifyReservationUser({
+    tripId: bookedTripId,
+    userId: listing.ownerId,
+    subject: "New Roost reservation request",
+    message: "A guest submitted a reservation request for one of your listings.",
+  });
+
   revalidatePath("/trips");
+  revalidatePath("/host/reservations");
   redirect("/trips");
 }
 
@@ -176,17 +185,21 @@ export async function cancelTrip(formData) {
   const user = await requireUser();
   const tripId = String(formData.get("tripId") ?? "");
 
-  await prisma.$transaction(async (tx) => {
+  const cancelledTrip = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
       where: {
         id: tripId,
         userId: user.id,
         status: { in: ["PENDING", "CONFIRMED"] },
       },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        listing: { select: { ownerId: true } },
+      },
     });
 
-    if (!trip) return;
+    if (!trip) return null;
 
     await tx.trip.update({
       where: { id: trip.id },
@@ -201,7 +214,18 @@ export async function cancelTrip(formData) {
         toStatus: "CANCELLED",
       },
     });
+
+    return trip;
   });
+
+  if (cancelledTrip?.listing.ownerId) {
+    await notifyReservationUser({
+      tripId: cancelledTrip.id,
+      userId: cancelledTrip.listing.ownerId,
+      subject: "A Roost reservation was cancelled",
+      message: "The guest cancelled this reservation.",
+    });
+  }
 
   revalidatePath("/trips");
   revalidatePath("/host/reservations");
