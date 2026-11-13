@@ -49,6 +49,13 @@ By default, Roost is available at:
 http://localhost:3000
 ```
 
+## Project planning
+
+Roost is developed using a lightweight Agile process with weekly sprints, a Definition of Ready/Done, and a prioritized backlog.
+
+- [Agile delivery model](docs/AGILE.md)
+- [Product backlog](docs/PRODUCT_BACKLOG.md)
+
 ## Modernization status
 
 The legacy NestJS/Amplication backend and React Admin UI have been retired. See [docs/MODERNIZATION.md](docs/MODERNIZATION.md) for the completed migration history and remaining cleanup work.
