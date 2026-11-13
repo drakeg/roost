@@ -21,9 +21,23 @@ function formatDateTime(value) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
+    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(value);
+}
+
+function eventLabel(event) {
+  if (!event.fromStatus && event.toStatus === "PENDING") {
+    return "Reservation requested";
+  }
+
+  return {
+    CONFIRMED: "Reservation confirmed",
+    DECLINED: "Reservation declined",
+    CANCELLED: "Reservation cancelled",
+    PENDING: "Reservation moved to pending",
+  }[event.toStatus] ?? `Reservation changed to ${event.toStatus.toLowerCase()}`;
 }
 
 export default async function ReservationMessagesPage({ params, searchParams }) {
@@ -61,6 +75,30 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
           {query.error}
         </p>
       ) : null}
+
+      <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-bold">Reservation history</h2>
+        <div className="mt-4 space-y-3">
+          {trip.events.length ? (
+            trip.events.map((event) => (
+              <div
+                key={event.id}
+                className="flex flex-col gap-1 border-l-2 border-slate-200 pl-4"
+              >
+                <p className="font-semibold">{eventLabel(event)}</p>
+                <p className="text-sm text-slate-500">
+                  {event.actor ? displayPerson(event.actor) : "System"} ·{" "}
+                  {formatDateTime(event.createdAt)}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500">
+              No detailed history is available for this older reservation.
+            </p>
+          )}
+        </div>
+      </section>
 
       <div className="mt-6 space-y-3">
         {trip.messages.length ? (

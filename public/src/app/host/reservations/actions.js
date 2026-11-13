@@ -9,15 +9,33 @@ async function updateHostedReservation(tripId, status) {
 
   if (!tripId) return;
 
-  await prisma.trip.updateMany({
-    where: {
-      id: tripId,
-      status: "PENDING",
-      listing: {
-        ownerId: host.id,
+  await prisma.$transaction(async (tx) => {
+    const trip = await tx.trip.findFirst({
+      where: {
+        id: tripId,
+        status: "PENDING",
+        listing: {
+          ownerId: host.id,
+        },
       },
-    },
-    data: { status },
+      select: { id: true, status: true },
+    });
+
+    if (!trip) return;
+
+    await tx.trip.update({
+      where: { id: trip.id },
+      data: { status },
+    });
+
+    await tx.reservationEvent.create({
+      data: {
+        tripId: trip.id,
+        actorId: host.id,
+        fromStatus: trip.status,
+        toStatus: status,
+      },
+    });
   });
 
   revalidatePath("/host/reservations");
@@ -44,15 +62,33 @@ export async function cancelHostedReservation(formData) {
 
   if (!tripId) return;
 
-  await prisma.trip.updateMany({
-    where: {
-      id: tripId,
-      status: { in: ["PENDING", "CONFIRMED"] },
-      listing: {
-        ownerId: host.id,
+  await prisma.$transaction(async (tx) => {
+    const trip = await tx.trip.findFirst({
+      where: {
+        id: tripId,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        listing: {
+          ownerId: host.id,
+        },
       },
-    },
-    data: { status: "CANCELLED" },
+      select: { id: true, status: true },
+    });
+
+    if (!trip) return;
+
+    await tx.trip.update({
+      where: { id: trip.id },
+      data: { status: "CANCELLED" },
+    });
+
+    await tx.reservationEvent.create({
+      data: {
+        tripId: trip.id,
+        actorId: host.id,
+        fromStatus: trip.status,
+        toStatus: "CANCELLED",
+      },
+    });
   });
 
   revalidatePath("/host/reservations");
