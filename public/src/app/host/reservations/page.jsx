@@ -154,7 +154,7 @@ export default async function HostReservationsPage({ searchParams }) {
                     href={`/reservations/${trip.id}/messages`}
                     className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
                   >
-                    Messages{trip._count.messages ? ` · ${trip._count.messages} unread` : ""}
+                    View reservation{trip._count.messages ? ` · ${trip._count.messages} unread` : ""}
                   </Link>
                   {trip.status === "PENDING" ? (
                     <>
