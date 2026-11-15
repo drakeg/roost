@@ -6,6 +6,13 @@ import {
   requireReservationThread,
 } from "@/lib/reservation-messages";
 import { sendReservationMessage } from "./actions";
+import { cancelTrip } from "@/app/stay-actions";
+import {
+  cancelHostedReservation,
+  confirmReservation,
+  declineReservation,
+} from "@/app/host/reservations/actions";
+import { calculateNights, formatCurrency, todayUtc } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +32,15 @@ function formatDateTime(value) {
     hour: "numeric",
     minute: "2-digit",
   }).format(value);
+}
+
+function statusLabel(status) {
+  return {
+    PENDING: "Pending host approval",
+    CONFIRMED: "Confirmed",
+    DECLINED: "Declined",
+    CANCELLED: "Cancelled",
+  }[status] ?? status;
 }
 
 function eventLabel(event) {
@@ -48,9 +64,22 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
   await markReservationMessagesRead(trip, user);
 
   const isGuest = trip.userId === user.id;
+  const isHost = trip.listing.ownerId === user.id;
   const otherParty = isGuest ? trip.listing.owner : trip.user;
   const backHref = isGuest ? "/trips" : "/host/reservations";
   const backLabel = isGuest ? "Back to my trips" : "Back to reservations";
+  const nights =
+    trip.nights ?? calculateNights(trip.startsAt, trip.endsAt);
+  const totalPrice =
+    trip.totalPrice ??
+    (nights * (trip.nightlyRate ?? trip.listing.price));
+  const canGuestCancel =
+    isGuest &&
+    ["PENDING", "CONFIRMED"].includes(trip.status) &&
+    (!trip.endsAt || trip.endsAt >= todayUtc());
+  const canHostDecide = isHost && trip.status === "PENDING";
+  const canHostCancel =
+    isHost && ["PENDING", "CONFIRMED"].includes(trip.status);
 
   return (
     <section className="mx-auto max-w-4xl px-6 py-10">
@@ -59,15 +88,88 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
       </Link>
 
       <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-sky-700">Reservation messages</p>
-        <h1 className="mt-1 text-3xl font-bold">{trip.listing.title}</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          {trip.listing.location} · {trip.startsAt ? formatDate(trip.startsAt) : "Date TBD"} →{" "}
-          {trip.endsAt ? formatDate(trip.endsAt) : "Date TBD"}
-        </p>
-        <p className="mt-2 text-sm text-slate-600">
-          Conversation with {displayPerson(otherParty)}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-sky-700">Reservation details</p>
+            <h1 className="mt-1 text-3xl font-bold">{trip.listing.title}</h1>
+            <p className="mt-2 text-sm text-slate-500">{trip.listing.location}</p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+            {statusLabel(trip.status)}
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-4 rounded-2xl bg-slate-50 p-5 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Dates</p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {trip.startsAt ? formatDate(trip.startsAt) : "Date TBD"} →{" "}
+              {trip.endsAt ? formatDate(trip.endsAt) : "Date TBD"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Party</p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {trip.guests ?? 1} guest{(trip.guests ?? 1) === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reservation</p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {nights} night{nights === 1 ? "" : "s"} · {formatCurrency(totalPrice)}
+            </p>
+            {trip.nightlyRate ? (
+              <p className="mt-1 text-sm text-slate-500">
+                {formatCurrency(trip.nightlyRate)} per night
+              </p>
+            ) : null}
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {isGuest ? "Host" : "Guest"}
+            </p>
+            <p className="mt-1 font-semibold text-slate-900">
+              {displayPerson(otherParty)}
+            </p>
+          </div>
+        </div>
+
+        {isGuest || isHost ? (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {canHostDecide ? (
+              <>
+                <form action={confirmReservation}>
+                  <input type="hidden" name="tripId" value={trip.id} />
+                  <button className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
+                    Confirm reservation
+                  </button>
+                </form>
+                <form action={declineReservation}>
+                  <input type="hidden" name="tripId" value={trip.id} />
+                  <button className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold">
+                    Decline
+                  </button>
+                </form>
+              </>
+            ) : null}
+            {canGuestCancel ? (
+              <form action={cancelTrip}>
+                <input type="hidden" name="tripId" value={trip.id} />
+                <button className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">
+                  Cancel trip
+                </button>
+              </form>
+            ) : null}
+            {canHostCancel ? (
+              <form action={cancelHostedReservation}>
+                <input type="hidden" name="tripId" value={trip.id} />
+                <button className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">
+                  Cancel reservation
+                </button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {query?.error ? (
@@ -100,7 +202,16 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
         </div>
       </section>
 
-      <div className="mt-6 space-y-3">
+      <section className="mt-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">Messages</h2>
+            <p className="text-sm text-slate-500">
+              Conversation with {displayPerson(otherParty)}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
         {trip.messages.length ? (
           trip.messages.map((message) => {
             const mine = message.senderId === user.id;
@@ -137,7 +248,8 @@ export default async function ReservationMessagesPage({ params, searchParams }) 
             </p>
           </div>
         )}
-      </div>
+        </div>
+      </section>
 
       <form
         action={sendReservationMessage}
