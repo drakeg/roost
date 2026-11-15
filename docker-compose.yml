@@ -7,9 +7,12 @@ services:
       - .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       PORT: 3000
     ports:
       - "${APP_PORT:-3000}:3000"
+    volumes:
+      - listing_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -33,3 +36,4 @@ services:
 
 volumes:
   postgres_data:
+  listing_uploads:
