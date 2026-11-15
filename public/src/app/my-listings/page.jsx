@@ -14,9 +14,17 @@ export default async function MyListingsPage() {
     <section className="mx-auto max-w-7xl px-6 py-10">
       <p className="text-sm font-semibold text-sky-700">Hosting</p>
       <h1 className="text-4xl font-bold tracking-tight">My listings</h1>
-      <p className="mt-2 text-slate-500">
-        Listings owned by @{user.username}.
-      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-slate-500">
+          Listings owned by @{user.username}.
+        </p>
+        <Link
+          href="/host/calendar"
+          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+        >
+          View host calendar
+        </Link>
+      </div>
 
       {listings.length ? (
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
