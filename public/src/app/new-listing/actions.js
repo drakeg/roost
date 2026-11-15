@@ -6,6 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { parsePhotoUrls } from "@/lib/listing-photos";
 import { parseAmenities } from "@/lib/amenities";
+import {
+  deleteListingPhoto,
+  saveListingPhotoUploads,
+  validateListingPhotoUploads,
+} from "@/lib/listing-photo-storage";
 
 export async function createListing(formData) {
   const title = String(formData.get("title") ?? "").trim();
@@ -17,6 +22,7 @@ export async function createListing(formData) {
   const guests = Number.parseInt(String(formData.get("guests") ?? "1"), 10);
   const bedrooms = Number.parseInt(String(formData.get("bedrooms") ?? "1"), 10);
   const photos = parsePhotoUrls(formData.get("photos"));
+  const uploads = validateListingPhotoUploads(formData.getAll("photoFiles"), photos.length);
   const amenities = parseAmenities(formData.getAll("amenities"));
 
   if (!title || !location || !placeType || !Number.isFinite(price) || price < 1) {
@@ -42,6 +48,23 @@ export async function createListing(formData) {
       ownerId: owner.id,
     },
   });
+
+  let uploadedPhotos = [];
+
+  try {
+    uploadedPhotos = await saveListingPhotoUploads(listing.id, uploads);
+
+    if (uploadedPhotos.length) {
+      await prisma.listing.update({
+        where: { id: listing.id },
+        data: { photos: [...photos, ...uploadedPhotos] },
+      });
+    }
+  } catch (error) {
+    await Promise.allSettled(uploadedPhotos.map((photo) => deleteListingPhoto(photo)));
+    await prisma.listing.delete({ where: { id: listing.id } });
+    throw error;
+  }
 
   revalidatePath("/");
   revalidatePath("/search");
