@@ -60,7 +60,20 @@ export default async function NewListingPage() {
         </fieldset>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold">Photo URLs</span>
+          <span className="mb-2 block text-sm font-semibold">Upload photos</span>
+          <input
+            type="file"
+            name="photoFiles"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+          />
+          <span className="mt-2 block text-xs text-slate-500">
+            JPEG, PNG, or WebP. Maximum 5 MB each and 5 photos total.
+          </span>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-sm font-semibold">Photo URLs (optional)</span>
           <textarea
             name="photos"
             placeholder={"https://example.com/photo-1.jpg\nhttps://example.com/photo-2.jpg"}
@@ -68,7 +81,7 @@ export default async function NewListingPage() {
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-sky-500"
           />
           <span className="mt-2 block text-xs text-slate-500">
-            Add up to five image URLs, one per line.
+            Existing external image URLs are still supported. Uploaded files and URLs share the five-photo limit.
           </span>
         </label>
         <label className="block">
