@@ -28,14 +28,30 @@ function statusLabel(status) {
   }[status] ?? status;
 }
 
-export default async function HostReservationsPage() {
+const STATUS_FILTERS = [
+  ["ALL", "All"],
+  ["PENDING", "Pending"],
+  ["CONFIRMED", "Confirmed"],
+  ["DECLINED", "Declined"],
+  ["CANCELLED", "Cancelled"],
+];
+
+function normalizeStatusFilter(value) {
+  const status = String(value ?? "ALL").toUpperCase();
+  return STATUS_FILTERS.some(([key]) => key === status) ? status : "ALL";
+}
+
+export default async function HostReservationsPage({ searchParams }) {
   const host = await requireUser();
+  const params = await searchParams;
+  const statusFilter = normalizeStatusFilter(params?.status);
 
   const trips = await prisma.trip.findMany({
     where: {
       listing: {
         ownerId: host.id,
       },
+      ...(statusFilter === "ALL" ? {} : { status: statusFilter }),
     },
     include: {
       listing: true,
@@ -67,6 +83,22 @@ export default async function HostReservationsPage() {
       <p className="mt-2 text-slate-500">
         Review requests and reservation history for your listings.
       </p>
+
+      <nav className="mt-6 flex flex-wrap gap-2" aria-label="Filter hosted reservations by status">
+        {STATUS_FILTERS.map(([key, label]) => (
+          <Link
+            key={key}
+            href={key === "ALL" ? "/host/reservations" : `/host/reservations?status=${key}`}
+            className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              statusFilter === key
+                ? "border-slate-950 bg-slate-950 text-white"
+                : "border-slate-300 bg-white text-slate-700 hover:border-sky-400 hover:text-sky-700"
+            }`}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
 
       <div className="mt-8 space-y-4">
         {trips.length ? (
@@ -155,10 +187,20 @@ export default async function HostReservationsPage() {
           })
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <p className="font-semibold">No reservations yet.</p>
-            <p className="mt-2 text-sm text-slate-500">
-              Reservation requests will appear here when guests book your listings.
+            <p className="font-semibold">
+              {statusFilter === "ALL"
+                ? "No reservations yet."
+                : `No ${statusLabel(statusFilter).toLowerCase()} reservations.`}
             </p>
+            {statusFilter === "ALL" ? (
+              <p className="mt-2 text-sm text-slate-500">
+                Reservation requests will appear here when guests book your listings.
+              </p>
+            ) : (
+              <Link href="/host/reservations" className="mt-2 inline-block text-sm font-semibold text-sky-700">
+                View all reservations →
+              </Link>
+            )}
           </div>
         )}
       </div>
