@@ -80,9 +80,17 @@ export default async function HostReservationsPage({ searchParams }) {
     <section className="mx-auto max-w-6xl px-6 py-10">
       <p className="text-sm font-semibold text-sky-700">Hosting</p>
       <h1 className="text-4xl font-bold tracking-tight">Reservations</h1>
-      <p className="mt-2 text-slate-500">
-        Review requests and reservation history for your listings.
-      </p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-slate-500">
+          Review requests and reservation history for your listings.
+        </p>
+        <Link
+          href="/host/calendar"
+          className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+        >
+          Calendar
+        </Link>
+      </div>
 
       <nav className="mt-6 flex flex-wrap gap-2" aria-label="Filter hosted reservations by status">
         {STATUS_FILTERS.map(([key, label]) => (
