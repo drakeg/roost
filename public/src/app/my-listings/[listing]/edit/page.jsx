@@ -82,7 +82,20 @@ export default async function EditListingPage({ params }) {
         </fieldset>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold">Photo URLs</span>
+          <span className="mb-2 block text-sm font-semibold">Upload more photos</span>
+          <input
+            type="file"
+            name="photoFiles"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+          />
+          <span className="mt-2 block text-xs text-slate-500">
+            JPEG, PNG, or WebP. Maximum 5 MB each and 5 photos total.
+          </span>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-sm font-semibold">Current photos / external URLs</span>
           <textarea
             name="photos"
             rows={4}
@@ -90,7 +103,7 @@ export default async function EditListingPage({ params }) {
             className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-sky-500"
           />
           <span className="mt-2 block text-xs text-slate-500">
-            Add up to five image URLs, one per line.
+            Remove an uploaded-photo path here to delete that stored image. External http/https URLs remain supported.
           </span>
         </label>
         <label className="block">
