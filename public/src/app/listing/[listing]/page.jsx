@@ -7,8 +7,33 @@ import { toggleWishlist } from "@/app/stay-actions";
 import BookingForm from "./components/BookingForm";
 import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
 import { amenityLabel } from "@/lib/amenities";
+import { respondToReview } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+const REVIEW_PAGE_SIZE = 6;
+const REVIEW_SORTS = {
+  newest: { createdAt: "desc" },
+  highest: [{ rating: "desc" }, { createdAt: "desc" }],
+  lowest: [{ rating: "asc" }, { createdAt: "desc" }],
+};
+
+function reviewHref(query, { reviewSort, reviewPage } = {}) {
+  const params = new URLSearchParams();
+
+  for (const key of ["startsAt", "endsAt", "guests"]) {
+    if (query?.[key]) params.set(key, String(query[key]));
+  }
+
+  const sort = reviewSort ?? String(query?.reviewSort ?? "newest");
+  const page = reviewPage ?? Number.parseInt(String(query?.reviewPage ?? "1"), 10);
+
+  if (sort !== "newest") params.set("reviewSort", sort);
+  if (page > 1) params.set("reviewPage", String(page));
+
+  const value = params.toString();
+  return value ? `?${value}#reviews` : "#reviews";
+}
 
 export default async function ListingPage({ params, searchParams }) {
   const { listing: id } = await params;
@@ -25,6 +50,11 @@ export default async function ListingPage({ params, searchParams }) {
       })
     : null;
 
+  const reviewSort = Object.hasOwn(REVIEW_SORTS, String(query?.reviewSort ?? "newest"))
+    ? String(query?.reviewSort ?? "newest")
+    : "newest";
+  const requestedReviewPage = Number.parseInt(String(query?.reviewPage ?? "1"), 10);
+
   const saved = user
     ? Boolean(
         await prisma.wishlist.findUnique({
@@ -38,25 +68,37 @@ export default async function ListingPage({ params, searchParams }) {
       )
     : false;
 
-  const [reviews, reviewCount] = await Promise.all([
-    prisma.review.findMany({
-      where: { listingId: id },
-      include: {
-        user: {
-          select: {
-            username: true,
-            firstName: true,
-            lastName: true,
-          },
+  const reviewCount = await prisma.review.count({ where: { listingId: id } });
+  const reviewPageCount = Math.max(1, Math.ceil(reviewCount / REVIEW_PAGE_SIZE));
+  const reviewPage = Math.min(
+    Math.max(
+      Number.isInteger(requestedReviewPage) && requestedReviewPage > 0
+        ? requestedReviewPage
+        : 1,
+      1
+    ),
+    reviewPageCount
+  );
+  const reviews = await prisma.review.findMany({
+    where: { listingId: id },
+    include: {
+      user: {
+        select: {
+          username: true,
+          firstName: true,
+          lastName: true,
         },
       },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    }),
-    prisma.review.count({ where: { listingId: id } }),
-  ]);
+    },
+    orderBy: REVIEW_SORTS[reviewSort],
+    skip: (reviewPage - 1) * REVIEW_PAGE_SIZE,
+    take: REVIEW_PAGE_SIZE,
+  });
 
   const ownsListing = Boolean(user && databaseListing?.ownerId === user.id);
+  const canRespondToReviews = Boolean(
+    user && (ownsListing || user.role === "ADMIN")
+  );
   const tomorrow = todayUtc();
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   const dayAfter = todayUtc();
@@ -144,7 +186,7 @@ export default async function ListingPage({ params, searchParams }) {
             <p className="font-semibold">{listing.owner}</p>
           </div>
 
-          <section className="mt-10 border-t border-slate-200 pt-8">
+          <section id="reviews" className="mt-10 scroll-mt-6 border-t border-slate-200 pt-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-sky-700">Guest feedback</p>
@@ -157,6 +199,28 @@ export default async function ListingPage({ params, searchParams }) {
                 </p>
               ) : null}
             </div>
+
+            {reviewCount ? (
+              <div className="mt-5 flex flex-wrap items-center gap-2" aria-label="Sort reviews">
+                {[
+                  ["newest", "Newest"],
+                  ["highest", "Highest rated"],
+                  ["lowest", "Lowest rated"],
+                ].map(([value, label]) => (
+                  <Link
+                    key={value}
+                    href={reviewHref(query, { reviewSort: value, reviewPage: 1 })}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                      reviewSort === value
+                        ? "border-slate-950 bg-slate-950 text-white"
+                        : "border-slate-300 bg-white text-slate-700 hover:border-sky-400 hover:text-sky-700"
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
 
             {reviews.length ? (
               <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -189,6 +253,47 @@ export default async function ListingPage({ params, searchParams }) {
                           {review.comment}
                         </p>
                       ) : null}
+
+                      {review.hostResponse ? (
+                        <div className="mt-4 rounded-xl bg-slate-50 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Host response
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">
+                            {review.hostResponse}
+                          </p>
+                          {review.hostRespondedAt ? (
+                            <p className="mt-2 text-xs text-slate-400">
+                              {new Intl.DateTimeFormat("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }).format(review.hostRespondedAt)}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {canRespondToReviews ? (
+                        <form action={respondToReview} className="mt-4 space-y-2">
+                          <input type="hidden" name="reviewId" value={review.id} />
+                          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {review.hostResponse ? "Update host response" : "Respond as host"}
+                          </label>
+                          <textarea
+                            name="response"
+                            maxLength={1000}
+                            rows={3}
+                            required
+                            defaultValue={review.hostResponse ?? ""}
+                            placeholder="Thank the guest or address their feedback."
+                            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                          />
+                          <button className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700">
+                            {review.hostResponse ? "Update response" : "Post response"}
+                          </button>
+                        </form>
+                      ) : null}
                     </article>
                   );
                 })}
@@ -198,6 +303,40 @@ export default async function ListingPage({ params, searchParams }) {
                 No verified reviews yet.
               </div>
             )}
+
+            {reviewPageCount > 1 ? (
+              <nav className="mt-6 flex items-center justify-between gap-3" aria-label="Review pages">
+                {reviewPage > 1 ? (
+                  <Link
+                    href={reviewHref(query, {
+                      reviewSort,
+                      reviewPage: reviewPage - 1,
+                    })}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+                  >
+                    ← Previous reviews
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                <p className="text-sm text-slate-500">
+                  Page {reviewPage} of {reviewPageCount}
+                </p>
+                {reviewPage < reviewPageCount ? (
+                  <Link
+                    href={reviewHref(query, {
+                      reviewSort,
+                      reviewPage: reviewPage + 1,
+                    })}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+                  >
+                    Next reviews →
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </nav>
+            ) : null}
           </section>
         </div>
 
