@@ -128,6 +128,8 @@ model Review {
   listingId String
   rating    Int
   comment   String?
+  hostResponse String?
+  hostRespondedAt DateTime?
   trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
