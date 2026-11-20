@@ -48,6 +48,9 @@ export function adminReservationWhere(filters) {
 export async function getAdminReservationReport(filters, { limit = 250 } = {}) {
   const where = adminReservationWhere(filters);
 
+  const includeConfirmedValue =
+    filters.status === "ALL" || filters.status === "CONFIRMED";
+
   const [reservations, totalCount, groupedStatuses, confirmedValue, missingConfirmedValue] =
     await Promise.all([
       prisma.trip.findMany({
@@ -83,21 +86,25 @@ export async function getAdminReservationReport(filters, { limit = 250 } = {}) {
         where,
         _count: { _all: true },
       }),
-      prisma.trip.aggregate({
-        where: {
-          ...where,
-          status: "CONFIRMED",
-          totalPrice: { not: null },
-        },
-        _sum: { totalPrice: true },
-      }),
-      prisma.trip.count({
-        where: {
-          ...where,
-          status: "CONFIRMED",
-          totalPrice: null,
-        },
-      }),
+      includeConfirmedValue
+        ? prisma.trip.aggregate({
+            where: {
+              ...where,
+              status: "CONFIRMED",
+              totalPrice: { not: null },
+            },
+            _sum: { totalPrice: true },
+          })
+        : Promise.resolve({ _sum: { totalPrice: null } }),
+      includeConfirmedValue
+        ? prisma.trip.count({
+            where: {
+              ...where,
+              status: "CONFIRMED",
+              totalPrice: null,
+            },
+          })
+        : Promise.resolve(0),
     ]);
 
   const statusCounts = Object.fromEntries(
