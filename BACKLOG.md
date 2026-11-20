@@ -7,9 +7,9 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 | P0 | Saved searches / search preferences | Lets guests reuse high-intent searches without rebuilding filters | Completed — PR #53 |
 | P0 | Repository standards adoption | Keeps development, documentation, badges, release policy, and validation consistent | Completed — PR #54 |
 | P1 | Admin reservation reporting | Gives small operators visibility into volume, status, cancellations, and booking value | Completed — PR #55 |
-| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress |
+| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle/access coverage |
 | P1 | Structured observability | Speeds diagnosis while protecting credentials/tokens | Initial secure logging merged — PR #56 |
-| P1 | Moderation audit history | Improves accountability for admin actions | In progress |
+| P1 | Moderation audit history | Improves accountability for admin actions | Completed — PR #58 |
 | P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | Planned |
 | P1 | Select an explicit open-source license | Clarifies reuse/contribution rights and enables an accurate license badge | Blocked — maintainer decision |
 | P2 | Account security hardening | Adds optional MFA/recovery/rate-limit/security-event improvements | Backlog |
@@ -48,6 +48,9 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 - Repository standards adoption — merged in PR #54.
 - Admin reservation reporting and initial test suite — merged in PR #55.
 - Structured/redacted logging security fix — merged in PR #56.
+- Moderation audit history — merged in PR #58.
+- Docker/local artifact hygiene — merged in PR #59.
+- Pinned container Yarn/OpenSSL tooling — merged in PR #60.
 
 ## Prioritization rules
 

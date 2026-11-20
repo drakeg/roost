@@ -12,11 +12,14 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 - [x] Repository standards adoption and badge validation — PR #54
 - [x] Admin reservation reporting and initial Node test suite — PR #55
 - [x] Structured/redacted application logging security fix — PR #56
+- [x] Moderation audit history — PR #58
+- [x] Docker/local artifact hygiene — PR #59
+- [x] Pinned container Yarn/OpenSSL tooling — PR #60
 
 ### In progress
 
-- [ ] Moderation audit history
 - [ ] Expand automated coverage across critical reservation/admin workflows
+  - reservation lifecycle and access rules
 
 ### Ready next
 
