@@ -1,4 +1,4 @@
-const SENSITIVE_KEY = /(token|password|secret|authorization|cookie|session|smtp|email|recipient|to)$/i;
+const SENSITIVE_KEY = /(?:^to$|token$|password$|secret$|authorization$|cookie$|session$|smtp(?:_|$)|email$|recipient$)/i;
 const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const BEARER_PATTERN = /\bBearer\s+[A-Za-z0-9._~+\/-]+=*/gi;
 const TOKEN_QUERY_PATTERN = /([?&](?:token|code|secret|key)=)[^&#\s]+/gi;
