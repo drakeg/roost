@@ -1,5 +1,11 @@
 # Roost
 
+<!-- madmallard-badges:start -->
+[![JavaScript](https://img.shields.io/badge/JavaScript-ES2023-F7DF1E?logo=javascript&logoColor=000000)](https://developer.mozilla.org/docs/Web/JavaScript) [![Next.js 15.5.28](https://img.shields.io/badge/Next.js-15.5.28-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/) [![React 18.2.0](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=000000)](https://react.dev/) [![Node.js 24](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/) [![Prisma 7.10.0](https://img.shields.io/badge/Prisma-7.10.0-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/) [![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+
+[![CI](https://github.com/drakeg/roost/actions/workflows/ci.yml/badge.svg)](https://github.com/drakeg/roost/actions/workflows/ci.yml) [![Repository standards](https://github.com/drakeg/roost/actions/workflows/repository-standards.yml/badge.svg)](https://github.com/drakeg/roost/actions/workflows/repository-standards.yml) [![Security policy](https://img.shields.io/badge/security-policy-4C1?logo=github)](SECURITY.md) [![Issues](https://img.shields.io/github/issues/drakeg/roost)](https://github.com/drakeg/roost/issues) [![Pull requests](https://img.shields.io/github/issues-pr/drakeg/roost)](https://github.com/drakeg/roost/pulls)
+<!-- madmallard-badges:end -->
+
 Roost is a modern full-stack stay discovery, hosting, and reservation application built with Next.js, PostgreSQL, and Prisma.
 
 The project began as a fork of an Airbnb clone starter, but the application has since been substantially rebuilt around a unified architecture and independent product identity.
@@ -14,7 +20,10 @@ The project began as a fork of an Airbnb clone starter, but the application has 
 - Wishlists
 - Reservation requests with host approval
 - Guest trip history and cancellation
-- Host reservation management
+- Host reservation management, messaging, lifecycle history, and status filters
+- Read-only host calendar combining reservations and blackout dates
+- First-party listing photo uploads with persistent Docker storage
+- Verified-stay reviews with sorting, pagination, and host responses
 - Admin dashboard for users, listings, reservations, and moderation
 - Docker Compose development environment
 - PostgreSQL persistence with Prisma migrations
@@ -51,10 +60,25 @@ http://localhost:3000
 
 ## Project planning
 
-Roost is developed using a lightweight Agile process with weekly sprints, a Definition of Ready/Done, and a prioritized backlog.
+Roost follows the Mad Mallard rapid-development loop: **Build → Deploy → Test → Fix → Redeploy → Continue**. Work is organized into small, reviewable PRs and one-week sprint slices.
 
+- [Sprint plan](SPRINTS.md)
+- [Prioritized backlog](BACKLOG.md)
 - [Agile delivery model](docs/AGILE.md)
-- [Product backlog](docs/PRODUCT_BACKLOG.md)
+- [Release policy](RELEASES.md)
+- [Contributing](CONTRIBUTING.md)
+- [Agent instructions](AGENTS.md)
+- [Security policy](SECURITY.md)
+
+Project-specific requirements take precedence, while shared conventions follow [Mad Mallard Repository Standards](https://github.com/drakeg/madmallard-repository-standards).
+
+## Commercial direction
+
+**Target customer hypothesis:** independent vacation-rental hosts and small property managers operating roughly 1–20 properties who want a simple direct-booking workflow without enterprise property-management complexity.
+
+**Value proposition hypothesis:** reduce manual reservation coordination by combining discovery, availability, guest messaging, reservation state, calendar visibility, reviews, and host operations in one self-hostable product.
+
+The fastest validation path is a narrow pilot with a small host/operator. Pricing and willingness-to-pay are hypotheses until validated with real prospects; no revenue or customer validation is assumed.
 
 ## Modernization status
 
