@@ -4,8 +4,8 @@ WORKDIR /app
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl \
   && rm -rf /var/lib/apt/lists/* \
-  && corepack enable \
-  && corepack prepare yarn@1.22.22 --activate \
+  && rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+  && npm install --global yarn@1.22.22 --registry=https://registry.npmjs.org \
   && yarn --version
 
 FROM base AS deps
