@@ -38,6 +38,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   sentReservationMessages ReservationMessage[]
   reservationEvents ReservationEvent[]
+  savedSearches SavedSearch[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -210,4 +211,24 @@ model ReservationEvent {
 
   @@index([tripId, createdAt])
   @@index([actorId])
+}
+
+
+model SavedSearch {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  query      String?
+  placeType  String?
+  guests     Int?
+  maxPrice   Int?
+  startsAt   DateTime?
+  endsAt     DateTime?
+  amenities  String[] @default([])
+  sort       String   @default("recommended")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, createdAt])
 }

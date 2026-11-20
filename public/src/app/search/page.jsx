@@ -2,11 +2,45 @@ import ListingCard from "@/components/listingCard";
 import { getListingFilterOptions, getListings } from "@/lib/listings";
 import { parseDateInput, toDateInputValue, todayUtc } from "@/lib/pricing";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { saveSearch, deleteSavedSearch } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+function savedSearchHref(saved) {
+  const params = new URLSearchParams();
+
+  if (saved.query) params.set("q", saved.query);
+  if (saved.placeType) params.set("type", saved.placeType);
+  if (saved.guests) params.set("guests", String(saved.guests));
+  if (saved.maxPrice) params.set("maxPrice", String(saved.maxPrice));
+  if (saved.startsAt) params.set("startsAt", saved.startsAt.toISOString().slice(0, 10));
+  if (saved.endsAt) params.set("endsAt", saved.endsAt.toISOString().slice(0, 10));
+  for (const amenity of saved.amenities ?? []) params.append("amenities", amenity);
+  if (saved.sort && saved.sort !== "recommended") params.set("sort", saved.sort);
+
+  const value = params.toString();
+  return value ? `/search?${value}` : "/search";
+}
+
+function savedSearchSummary(saved) {
+  const parts = [];
+  if (saved.placeType) parts.push(saved.placeType);
+  if (saved.guests) parts.push(`${saved.guests}+ guests`);
+  if (saved.maxPrice) parts.push(`≤ ${saved.maxPrice}/night`);
+  if (saved.amenities?.length) parts.push(`${saved.amenities.length} amenity filter${saved.amenities.length === 1 ? "" : "s"}`);
+  if (saved.startsAt && saved.endsAt) {
+    parts.push(
+      `${saved.startsAt.toISOString().slice(0, 10)} → ${saved.endsAt.toISOString().slice(0, 10)}`
+    );
+  }
+  return parts.length ? parts.join(" · ") : "All stays";
+}
+
 export default async function SearchPage({ searchParams }) {
   const params = await searchParams;
+  const user = await getCurrentUser();
   const query = params?.q ?? "";
   const placeType = params?.type ?? "";
   const guests = params?.guests ?? "";
@@ -35,7 +69,7 @@ export default async function SearchPage({ searchParams }) {
   );
   const minimumDate = toDateInputValue(todayUtc());
 
-  const [listings, filters] = await Promise.all([
+  const [listings, filters, savedSearches] = await Promise.all([
     getListings({
       query,
       placeType,
@@ -47,6 +81,13 @@ export default async function SearchPage({ searchParams }) {
       sort,
     }),
     getListingFilterOptions(),
+    user
+      ? prisma.savedSearch.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        })
+      : Promise.resolve([]),
   ]);
 
   const activeFilterCount = [
@@ -72,6 +113,79 @@ export default async function SearchPage({ searchParams }) {
             </p>
           </div>
         </div>
+
+        {user ? (
+          <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-sky-700">Saved searches</p>
+                <h2 className="mt-1 text-xl font-bold">Reuse your favorite filters</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Save up to 20 searches. Alerts are not enabled in this first slice.
+                </p>
+              </div>
+
+              <form action={saveSearch} className="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
+                <input
+                  name="name"
+                  maxLength={80}
+                  placeholder="Name this search (optional)"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                />
+                <input type="hidden" name="q" value={query} />
+                <input type="hidden" name="type" value={placeType} />
+                <input type="hidden" name="guests" value={guests} />
+                <input type="hidden" name="maxPrice" value={maxPrice} />
+                <input type="hidden" name="startsAt" value={validAvailabilityWindow ? startsAt : ""} />
+                <input type="hidden" name="endsAt" value={validAvailabilityWindow ? endsAt : ""} />
+                <input type="hidden" name="sort" value={sort} />
+                {selectedAmenities.map((amenity) => (
+                  <input key={amenity} type="hidden" name="amenities" value={amenity} />
+                ))}
+                <button className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
+                  Save current search
+                </button>
+              </form>
+            </div>
+
+            {savedSearches.length ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {savedSearches.map((saved) => (
+                  <article
+                    key={saved.id}
+                    className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 p-4"
+                  >
+                    <div className="min-w-0">
+                      <a
+                        href={savedSearchHref(saved)}
+                        className="font-semibold text-slate-950 hover:text-sky-700"
+                      >
+                        {saved.name}
+                      </a>
+                      <p className="mt-1 truncate text-sm text-slate-500">
+                        {saved.query ? `“${saved.query}” · ` : ""}
+                        {savedSearchSummary(saved)}
+                      </p>
+                    </div>
+                    <form action={deleteSavedSearch}>
+                      <input type="hidden" name="savedSearchId" value={saved.id} />
+                      <button
+                        aria-label={`Delete saved search ${saved.name}`}
+                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-300 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+                No saved searches yet. Set your filters, then save them here.
+              </p>
+            )}
+          </section>
+        ) : null}
 
         {hasPartialOrInvalidDates ? (
           <p className="mt-5 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
