@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+build
+coverage
+src/generated
+uploads
+tests
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
