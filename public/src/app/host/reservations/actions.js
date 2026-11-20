@@ -4,21 +4,21 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { notifyReservationUser } from "@/lib/reservation-notifications";
+import { hostedReservationTransitionWhere } from "@/lib/reservation-lifecycle";
 
 async function updateHostedReservation(tripId, status) {
   const host = await requireUser();
 
-  if (!tripId) return;
+  const where = hostedReservationTransitionWhere({
+    tripId,
+    hostId: host.id,
+    toStatus: status,
+  });
+  if (!where) return;
 
   const updatedTrip = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
-      where: {
-        id: tripId,
-        status: "PENDING",
-        listing: {
-          ownerId: host.id,
-        },
-      },
+      where,
       select: { id: true, status: true, userId: true },
     });
 
@@ -77,17 +77,16 @@ export async function cancelHostedReservation(formData) {
   const host = await requireUser();
   const tripId = String(formData.get("tripId") ?? "");
 
-  if (!tripId) return;
+  const where = hostedReservationTransitionWhere({
+    tripId,
+    hostId: host.id,
+    toStatus: "CANCELLED",
+  });
+  if (!where) return;
 
   const cancelledTrip = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
-      where: {
-        id: tripId,
-        status: { in: ["PENDING", "CONFIRMED"] },
-        listing: {
-          ownerId: host.id,
-        },
-      },
+      where,
       select: { id: true, status: true, userId: true },
     });
 
