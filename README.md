@@ -58,6 +58,14 @@ By default, Roost is available at:
 http://localhost:3000
 ```
 
+A database-backed health check is available at:
+
+```
+http://localhost:3000/health
+```
+
+Healthy responses return HTTP 200 with `{"status":"ok"}`; database/application failures return HTTP 503. Docker and Docker Compose use this endpoint for container health.
+
 ## Project planning
 
 Roost follows the Mad Mallard rapid-development loop: **Build → Deploy → Test → Fix → Redeploy → Continue**. Work is organized into small, reviewable PRs and one-week sprint slices.
