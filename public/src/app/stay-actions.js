@@ -6,6 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { calculateNights, parseDateInput, todayUtc } from "@/lib/pricing";
 import { notifyReservationUser } from "@/lib/reservation-notifications";
+import {
+  ACTIVE_RESERVATION_STATUSES,
+  guestCancellationWhere,
+} from "@/lib/reservation-lifecycle";
 
 export async function toggleWishlist(formData) {
   const user = await requireUser();
@@ -104,7 +108,7 @@ export async function createTrip(formData) {
             tx.trip.findFirst({
               where: {
                 listingId,
-                status: { in: ["PENDING", "CONFIRMED"] },
+                status: { in: [...ACTIVE_RESERVATION_STATUSES] },
                 AND: [
                   { startsAt: { lt: endsAt } },
                   { endsAt: { gt: startsAt } },
@@ -185,13 +189,12 @@ export async function cancelTrip(formData) {
   const user = await requireUser();
   const tripId = String(formData.get("tripId") ?? "");
 
+  const where = guestCancellationWhere({ tripId, userId: user.id });
+  if (!where) return;
+
   const cancelledTrip = await prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findFirst({
-      where: {
-        id: tripId,
-        userId: user.id,
-        status: { in: ["PENDING", "CONFIRMED"] },
-      },
+      where,
       select: {
         id: true,
         status: true,
