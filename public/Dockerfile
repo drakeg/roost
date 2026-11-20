@@ -1,16 +1,22 @@
-FROM node:24-bookworm-slim AS deps
+FROM node:24-bookworm-slim AS base
 WORKDIR /app
-RUN corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl \
+  && rm -rf /var/lib/apt/lists/* \
+  && corepack enable \
+  && corepack prepare yarn@1.22.22 --activate \
+  && yarn --version
+
+FROM base AS deps
 ARG DATABASE_URL=postgresql://roost:roost@localhost:5432/roost
 ENV DATABASE_URL=${DATABASE_URL}
 COPY package.json yarn.lock ./
 COPY prisma ./prisma
 COPY prisma7.config.ts ./
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --network-timeout 600000
 
-FROM node:24-bookworm-slim AS builder
-WORKDIR /app
-RUN corepack enable
+FROM base AS builder
 ARG DATABASE_URL=postgresql://roost:roost@localhost:5432/roost
 ENV DATABASE_URL=${DATABASE_URL}
 COPY --from=deps /app/node_modules ./node_modules
@@ -18,11 +24,9 @@ COPY . .
 RUN yarn prisma:generate
 RUN yarn build
 
-FROM node:24-bookworm-slim AS runner
-WORKDIR /app
+FROM base AS runner
 ENV NODE_ENV=production
 ENV PORT=3000
-RUN corepack enable
 COPY --from=builder /app/package.json /app/yarn.lock ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
