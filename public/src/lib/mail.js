@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { logger } from "@/lib/logger";
 
 function smtpConfigured() {
   return Boolean(
@@ -23,13 +24,16 @@ function createTransporter() {
   });
 }
 
-async function sendTextEmail({ to, subject, text, developmentLog }) {
+async function sendTextEmail({ to, subject, text, developmentEvent }) {
   if (!smtpConfigured()) {
     if (process.env.NODE_ENV === "production") {
       throw new Error("SMTP is not configured.");
     }
 
-    console.info(developmentLog);
+    logger.info("email.delivery.skipped", {
+      kind: developmentEvent,
+      reason: "smtp_not_configured",
+    });
     return;
   }
 
@@ -51,7 +55,7 @@ Use this link within 30 minutes:
 ${resetUrl}
 
 If you did not request this, you can ignore this email.`,
-    developmentLog: `[roost] Password reset for ${to}: ${resetUrl}`,
+    developmentEvent: "password_reset",
   });
 }
 
@@ -64,7 +68,7 @@ export async function sendEmailVerification({ to, verificationUrl }) {
 ${verificationUrl}
 
 If you did not create or update a Roost account, you can ignore this email.`,
-    developmentLog: `[roost] Email verification for ${to}: ${verificationUrl}`,
+    developmentEvent: "email_verification",
   });
 }
 
@@ -83,6 +87,6 @@ View the reservation:
 ${reservationUrl}
 
 This is a transactional notification from Roost.`,
-    developmentLog: `[roost] Reservation notification for ${to}: ${subject} - ${reservationUrl}`,
+    developmentEvent: "reservation_notification",
   });
 }

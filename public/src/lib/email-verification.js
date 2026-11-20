@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEmailVerification } from "@/lib/mail";
+import { logger } from "@/lib/logger";
 
 const VERIFY_HOURS = 24;
 
@@ -52,7 +53,7 @@ export async function issueEmailVerification(userId, email) {
     return true;
   } catch (error) {
     await prisma.emailVerificationToken.deleteMany({ where: { userId } });
-    console.error("[roost] Email verification delivery failed.", error);
+    logger.error("email_verification.delivery_failed", { error, userId });
     return false;
   }
 }

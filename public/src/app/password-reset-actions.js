@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { destroySession, hashPassword } from "@/lib/auth";
 import { sendPasswordResetEmail } from "@/lib/mail";
+import { logger } from "@/lib/logger";
 
 const RESET_MINUTES = 30;
 
@@ -73,7 +74,7 @@ export async function requestPasswordReset(formData) {
       });
     } catch (error) {
       await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
-      console.error("[roost] Password reset delivery failed.", error);
+      logger.error("password_reset.delivery_failed", { error });
     }
   }
 

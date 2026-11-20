@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendReservationNotificationEmail } from "@/lib/mail";
+import { logger } from "@/lib/logger";
 
 function appUrl() {
   const configured = String(process.env.APP_URL ?? "").trim().replace(/\/$/, "");
@@ -46,7 +47,7 @@ export async function notifyReservationUser({
 
     return true;
   } catch (error) {
-    console.error("[roost] Reservation notification delivery failed.", error);
+    logger.error("reservation_notification.delivery_failed", { error, tripId });
     return false;
   }
 }
