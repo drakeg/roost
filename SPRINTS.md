@@ -19,16 +19,19 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 - [x] Saved-search rules/scoping test coverage — PR #62
 - [x] Corrected container Yarn pinning — PR #63
 - [x] Database-backed application/container health monitoring — PR #64
+- [x] SMB pilot runbook and smoke tooling — PR #65
 
 ### In progress
 
 - [ ] Expand automated coverage across critical reservation/admin workflows
   - reservation lifecycle/access rules complete
   - saved-search normalization/scoping complete
-- [ ] Prepare the SMB host pilot package and end-to-end demo checklist
-  - runbook
-  - deployment smoke test
-  - pilot metrics/pricing interview criteria
+- [ ] Validate the built Docker image end-to-end in CI
+  - PostgreSQL 17 service
+  - full Prisma migration deployment
+  - production container startup
+  - database-backed health wait
+  - pilot smoke command
 
 ### Ready next
 
