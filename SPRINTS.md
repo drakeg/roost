@@ -15,11 +15,16 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 - [x] Moderation audit history — PR #58
 - [x] Docker/local artifact hygiene — PR #59
 - [x] Pinned container Yarn/OpenSSL tooling — PR #60
+- [x] Reservation lifecycle/access test coverage — PR #61
+- [x] Saved-search rules/scoping test coverage — PR #62
+- [x] Corrected container Yarn pinning — PR #63
 
 ### In progress
 
 - [ ] Expand automated coverage across critical reservation/admin workflows
-  - reservation lifecycle and access rules
+  - reservation lifecycle/access rules complete
+  - saved-search normalization/scoping complete
+- [ ] Add database-backed application/container health monitoring
 
 ### Ready next
 
