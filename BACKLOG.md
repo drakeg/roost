@@ -10,7 +10,7 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 | P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle + saved-search coverage |
 | P1 | Structured observability | Speeds diagnosis while protecting credentials/tokens | Initial secure logging merged — PR #56 |
 | P1 | Moderation audit history | Improves accountability for admin actions | Completed — PR #58 |
-| P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | Planned |
+| P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | In progress — runbook + smoke tooling |
 | P1 | Select an explicit open-source license | Clarifies reuse/contribution rights and enables an accurate license badge | Blocked — maintainer decision |
 | P2 | Account security hardening | Adds optional MFA/recovery/rate-limit/security-event improvements | Backlog |
 | P2 | Host multi-listing workflow polish | Reduces repetitive work for small property managers | Backlog |
@@ -54,6 +54,7 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 - Reservation lifecycle/access test coverage — merged in PR #61.
 - Saved-search normalization/scoping test coverage — merged in PR #62.
 - Corrected container Yarn pinning — merged in PR #63.
+- Database-backed application/container health monitoring — merged in PR #64.
 
 ## Prioritization rules
 
