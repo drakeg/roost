@@ -31,7 +31,9 @@ jobs:
       - name: Install dependencies
         working-directory: public
         run: yarn install --frozen-lockfile
-      - name: Test
+      - name: Test pilot smoke tooling
+        run: python3 -m unittest scripts/test_pilot_smoke_test.py -v
+      - name: Test application
         working-directory: public
         run: yarn test
       - name: Build
