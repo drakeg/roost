@@ -6,17 +6,22 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 
 **Goal:** turn the completed reservation and host-management foundation into a testable product that a small independent host could realistically evaluate.
 
-### In review
+### Completed this Sprint
 
-- [ ] Saved searches / search preferences — PR #53
-- [ ] Repository standards adoption, badge validation, and governance synchronization
+- [x] Saved searches / search preferences — PR #53
+- [x] Repository standards adoption and badge validation — PR #54
+- [x] Admin reservation reporting and initial Node test suite — PR #55
+- [x] Structured/redacted application logging security fix — PR #56
+
+### In progress
+
+- [ ] Moderation audit history
+- [ ] Expand automated coverage across critical reservation/admin workflows
 
 ### Ready next
 
-- [ ] Admin reservation reporting: reservation volume, status mix, cancellations, booking-value snapshots
-- [ ] Automated coverage for reservation authorization, saved searches, and critical host workflows
-- [ ] Structured application logging with credential/token redaction
 - [ ] Refresh the LAN-accessible Docker test environment after merged migrations/features
+- [ ] Prepare the SMB host pilot package and end-to-end demo checklist
 
 ### Acceptance
 
