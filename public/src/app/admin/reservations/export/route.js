@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 
 function csvCell(value) {
   const text = String(value ?? "");
-  return `"${text.replaceAll('"', '""')}"`;
+  const spreadsheetSafe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${spreadsheetSafe.replaceAll('"', '""')}"`;
 }
 
 function isoDate(value) {
