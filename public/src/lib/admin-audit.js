@@ -37,3 +37,20 @@ export function sanitizeAuditDetails(details) {
 
   return safe;
 }
+
+export function normalizeAuditFilter(value, allowed, fallback = "ALL") {
+  const normalized = String(value ?? fallback).toUpperCase();
+  return allowed.includes(normalized) ? normalized : fallback;
+}
+
+export function auditDetailsSummary(details) {
+  if (!details || typeof details !== "object" || Array.isArray(details)) return "";
+
+  const parts = [];
+  for (const [key, value] of Object.entries(details)) {
+    if (value === null || value === undefined || value === "") continue;
+    const label = key.replace(/([a-z])([A-Z])/g, "$1 $2").replaceAll("_", " ");
+    parts.push(`${label}: ${String(value)}`);
+  }
+  return parts.join(" · ");
+}
