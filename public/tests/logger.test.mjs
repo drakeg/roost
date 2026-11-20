@@ -28,6 +28,7 @@ test("sanitizeLogValue redacts nested sensitive keys", () => {
   });
 
   assert.equal(sanitized.userId, "user_123");
+  assert.equal(sanitizeLogValue({ photo: "/uploads/photo.jpg" }).photo, "/uploads/photo.jpg");
   assert.equal(sanitized.password, "[REDACTED]");
   assert.equal(sanitized.nested.sessionToken, "[REDACTED]");
   assert.equal(sanitized.nested.authorization, "[REDACTED]");
