@@ -1,11 +1,9 @@
 FROM node:24-bookworm-slim AS base
 WORKDIR /app
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl \
   && rm -rf /var/lib/apt/lists/* \
-  && corepack enable \
-  && corepack prepare yarn@1.22.22 --activate \
+  && npm install --global yarn@1.22.22 --registry=https://registry.npmjs.org \
   && yarn --version
 
 FROM base AS deps
