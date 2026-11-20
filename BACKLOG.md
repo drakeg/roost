@@ -7,7 +7,7 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 | P0 | Saved searches / search preferences | Lets guests reuse high-intent searches without rebuilding filters | Completed — PR #53 |
 | P0 | Repository standards adoption | Keeps development, documentation, badges, release policy, and validation consistent | Completed — PR #54 |
 | P1 | Admin reservation reporting | Gives small operators visibility into volume, status, cancellations, and booking value | Completed — PR #55 |
-| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle/access coverage |
+| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle + saved-search coverage |
 | P1 | Structured observability | Speeds diagnosis while protecting credentials/tokens | Initial secure logging merged — PR #56 |
 | P1 | Moderation audit history | Improves accountability for admin actions | Completed — PR #58 |
 | P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | Planned |
@@ -51,6 +51,9 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 - Moderation audit history — merged in PR #58.
 - Docker/local artifact hygiene — merged in PR #59.
 - Pinned container Yarn/OpenSSL tooling — merged in PR #60.
+- Reservation lifecycle/access test coverage — merged in PR #61.
+- Saved-search normalization/scoping test coverage — merged in PR #62.
+- Corrected container Yarn pinning — merged in PR #63.
 
 ## Prioritization rules
 
