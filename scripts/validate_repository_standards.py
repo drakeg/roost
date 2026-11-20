@@ -22,6 +22,18 @@ for name in REQUIRED:
     if not (ROOT / name).is_file():
         errors.append(f"missing required file: {name}")
 
+if not (ROOT / "public" / ".dockerignore").is_file():
+    errors.append("missing required file: public/.dockerignore")
+
+root_gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+public_gitignore = (ROOT / "public" / ".gitignore").read_text(encoding="utf-8")
+for expected in (".env", ".env.*", "!.env.example"):
+    if expected not in root_gitignore:
+        errors.append(f"root .gitignore missing: {expected}")
+for expected in ("/src/generated/", "/uploads/"):
+    if expected not in public_gitignore:
+        errors.append(f"public/.gitignore missing: {expected}")
+
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 if readme.count(START) != 1 or readme.count(END) != 1:
     errors.append("README must contain exactly one bounded Mad Mallard badge block")
