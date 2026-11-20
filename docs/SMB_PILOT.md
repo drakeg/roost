@@ -27,7 +27,7 @@ Before every demo or pilot session:
 6. Confirm listing uploads use persistent storage.
 7. Confirm an admin account is available without sharing credentials in tickets, chat logs, or documentation.
 
-The smoke command checks the database-backed `/health` endpoint plus the public home, search, login, and registration pages. It intentionally does not log in or mutate pilot data.
+The smoke command checks the database-backed `/health` endpoint plus the public home, search, login, and registration pages. It intentionally does not log in or mutate pilot data. CI runs the same command against the freshly built production Docker image backed by a clean PostgreSQL 17 service, so migration/startup regressions block merge.
 
 ## End-to-end demo workflow
 
