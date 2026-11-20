@@ -1,5 +1,6 @@
 FROM node:24-bookworm-slim AS base
 WORKDIR /app
+# Node 24 ships Corepack Yarn shims; replace them with the repository's verified Yarn 1.x toolchain.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl \
   && rm -rf /var/lib/apt/lists/* \
