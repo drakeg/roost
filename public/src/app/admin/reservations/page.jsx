@@ -44,10 +44,6 @@ export default async function AdminReservationsPage({ searchParams }) {
   const filters = normalizeAdminReservationFilters(params);
   const report = await getAdminReservationReport(filters);
 
-  const cancellationRate = report.totalCount
-    ? Math.round((report.statusCounts.CANCELLED / report.totalCount) * 100)
-    : 0;
-
   return (
     <section className="mx-auto max-w-7xl px-6 py-10">
       <Link href="/admin" className="text-sm font-semibold text-sky-700">
@@ -141,7 +137,7 @@ export default async function AdminReservationsPage({ searchParams }) {
           ["Reservations", report.totalCount],
           ["Pending", report.statusCounts.PENDING],
           ["Confirmed", report.statusCounts.CONFIRMED],
-          ["Cancelled", `${report.statusCounts.CANCELLED} (${cancellationRate}%)`],
+          ["Cancelled", report.statusCounts.CANCELLED],
           ["Confirmed booking value", formatCurrency(report.confirmedBookingValue)],
         ].map(([label, value]) => (
           <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5">
