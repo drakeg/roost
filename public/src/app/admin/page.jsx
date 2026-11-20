@@ -44,12 +44,20 @@ export default async function AdminPage() {
       <p className="text-sm font-semibold text-sky-700">Administration</p>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="text-4xl font-bold tracking-tight">Roost admin</h1>
-        <Link
-          href="/admin/reservations"
-          className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Reservation reporting
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/audit"
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+          >
+            Audit history
+          </Link>
+          <Link
+            href="/admin/reservations"
+            className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Reservation reporting
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-4">
