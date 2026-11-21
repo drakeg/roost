@@ -47,7 +47,7 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
   - constant-cost password verification for unknown usernames
   - rolling failed-attempt window and temporary lock
   - successful-login reset and last-login timestamp
-- [ ] Bound active session retention
+- [x] Bound active session retention
   - prune expired sessions during sign-in
   - cap accounts at 10 active sessions
   - evict oldest sessions first
