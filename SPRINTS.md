@@ -51,6 +51,10 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
   - prune expired sessions during sign-in
   - cap accounts at 10 active sessions
   - evict oldest sessions first
+- [x] Add user-visible security activity history
+  - login lockouts, password changes/resets, email changes, and session revocations
+  - automatic session-limit eviction events
+  - bounded non-sensitive event details only
 
 ### Ready next
 
