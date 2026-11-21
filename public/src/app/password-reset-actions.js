@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { destroySession, hashPassword } from "@/lib/auth";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import { logger } from "@/lib/logger";
+import { clearedLoginThrottleState } from "@/lib/login-security";
 
 const RESET_MINUTES = 30;
 
@@ -113,7 +114,10 @@ export async function resetPassword(formData) {
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
-      data: { password: await hashPassword(newPassword) },
+      data: {
+        password: await hashPassword(newPassword),
+        ...clearedLoginThrottleState(),
+      },
     }),
     prisma.passwordResetToken.deleteMany({
       where: { userId: record.userId },
