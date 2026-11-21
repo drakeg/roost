@@ -1,6 +1,7 @@
 import { getCurrentSession, requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { changePassword, resendEmailVerification, revokeOtherSessions, revokeSession, updateProfile } from "./actions";
+import { MAX_ACTIVE_SESSIONS } from "@/lib/session-security";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +147,8 @@ export default async function AccountPage({ searchParams }) {
               <h2 className="text-xl font-bold">Active sessions</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Review signed-in devices and revoke access you no longer recognize.
+                Roost keeps up to {MAX_ACTIVE_SESSIONS} active sessions per account
+                and removes the oldest when that limit is exceeded.
               </p>
             </div>
             {sessions.length > 1 ? (
