@@ -41,6 +41,13 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
   - database-backed health passed
   - home/search/login/register smoke checks passed at `http://192.168.0.155:8031`
 
+### Account security hardening
+
+- [ ] Add server-side login brute-force protection
+  - constant-cost password verification for unknown usernames
+  - rolling failed-attempt window and temporary lock
+  - successful-login reset and last-login timestamp
+
 ### Ready next
 
 - [ ] Expand automated coverage for listing uploads and remaining host/admin workflows

@@ -9,6 +9,13 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { issueEmailVerification } from "@/lib/email-verification";
+import {
+  DUMMY_LOGIN_PASSWORD_HASH,
+  isLoginLocked,
+  nextLoginFailureState,
+  successfulLoginState,
+} from "@/lib/login-security";
+import { logger } from "@/lib/logger";
 
 function normalizeUsername(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -63,15 +70,86 @@ export async function register(formData) {
   redirect("/account?verify=sent");
 }
 
+async function recordLoginFailure(userId, now) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await prisma.$transaction(
+        async (tx) => {
+          const current = await tx.user.findUnique({
+            where: { id: userId },
+            select: {
+              id: true,
+              failedLoginAttempts: true,
+              loginFailureWindowStartedAt: true,
+              loginLockedUntil: true,
+            },
+          });
+
+          if (!current || isLoginLocked(current, now)) {
+            return { lockTriggered: false };
+          }
+
+          const next = nextLoginFailureState(current, now);
+          await tx.user.update({
+            where: { id: current.id },
+            data: {
+              failedLoginAttempts: next.failedLoginAttempts,
+              loginFailureWindowStartedAt: next.loginFailureWindowStartedAt,
+              loginLockedUntil: next.loginLockedUntil,
+            },
+          });
+
+          return { lockTriggered: next.lockTriggered };
+        },
+        { isolationLevel: "Serializable" }
+      );
+    } catch (error) {
+      if (error?.code !== "P2034" || attempt === 3) throw error;
+    }
+  }
+
+  return { lockTriggered: false };
+}
+
 export async function login(formData) {
   const username = normalizeUsername(formData.get("username"));
   const password = String(formData.get("password") ?? "");
+  const now = new Date();
 
-  const user = await prisma.user.findUnique({ where: { username } });
+  const user = username
+    ? await prisma.user.findUnique({
+        where: { username },
+        select: {
+          id: true,
+          password: true,
+          failedLoginAttempts: true,
+          loginFailureWindowStartedAt: true,
+          loginLockedUntil: true,
+        },
+      })
+    : null;
 
-  if (!user || !(await verifyPassword(password, user.password))) {
+  const passwordMatches = await verifyPassword(
+    password,
+    user?.password ?? DUMMY_LOGIN_PASSWORD_HASH
+  );
+  const locked = user ? isLoginLocked(user, now) : false;
+
+  if (!user || locked || !passwordMatches) {
+    if (user && !locked) {
+      const failure = await recordLoginFailure(user.id, now);
+      if (failure?.lockTriggered) {
+        logger.warn("auth.login_temporarily_locked", { userId: user.id });
+      }
+    }
+
     redirect("/login?error=Invalid%20username%20or%20password");
   }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: successfulLoginState(now),
+  });
 
   await createSession(user.id);
   redirect("/");
