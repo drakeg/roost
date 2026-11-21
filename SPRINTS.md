@@ -43,10 +43,14 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 
 ### Account security hardening
 
-- [ ] Add server-side login brute-force protection
+- [x] Add server-side login brute-force protection
   - constant-cost password verification for unknown usernames
   - rolling failed-attempt window and temporary lock
   - successful-login reset and last-login timestamp
+- [ ] Bound active session retention
+  - prune expired sessions during sign-in
+  - cap accounts at 10 active sessions
+  - evict oldest sessions first
 
 ### Ready next
 
