@@ -2,6 +2,10 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { todayUtc } from "@/lib/pricing";
+import {
+  hostCalendarHref,
+  normalizeHostListingFilter,
+} from "@/lib/host-calendar-filters";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +95,7 @@ export default async function HostCalendarPage({ searchParams }) {
   const rangeEnd = new Date(calendarDays[calendarDays.length - 1]);
   rangeEnd.setUTCDate(rangeEnd.getUTCDate() + 1);
 
-  const listings = await prisma.listing.findMany({
+  const allListings = await prisma.listing.findMany({
     where: { ownerId: host.id },
     select: {
       id: true,
@@ -134,6 +138,19 @@ export default async function HostCalendarPage({ searchParams }) {
     },
     orderBy: { title: "asc" },
   });
+
+  const listingFilter = normalizeHostListingFilter(
+    query?.listing,
+    allListings.map((listing) => listing.id)
+  );
+  const listings =
+    listingFilter === "ALL"
+      ? allListings
+      : allListings.filter((listing) => listing.id === listingFilter);
+  const selectedListing =
+    listingFilter === "ALL"
+      ? null
+      : allListings.find((listing) => listing.id === listingFilter) ?? null;
 
   const entriesByDay = new Map();
 
@@ -195,7 +212,8 @@ export default async function HostCalendarPage({ searchParams }) {
           <p className="text-sm font-semibold text-sky-700">Hosting</p>
           <h1 className="text-4xl font-bold tracking-tight">Calendar</h1>
           <p className="mt-2 text-slate-500">
-            Pending and confirmed reservations alongside blocked availability.
+            Pending and confirmed reservations alongside blocked availability
+            {selectedListing ? ` for ${selectedListing.title}` : " across your listings"}.
           </p>
         </div>
         <Link
@@ -206,27 +224,59 @@ export default async function HostCalendarPage({ searchParams }) {
         </Link>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4">
-        <Link
-          href={`/host/calendar?month=${monthParam(addMonths(monthStart, -1))}`}
-          className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
-        >
-          ← Previous
-        </Link>
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">{formatMonth(monthStart)}</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            {monthReservationCount} active reservation
-            {monthReservationCount === 1 ? "" : "s"} · {monthBlockCount} blocked range
-            {monthBlockCount === 1 ? "" : "s"}
-          </p>
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4">
+        <form className="mb-4 grid gap-3 border-b border-slate-200 pb-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <label>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Property
+            </span>
+            <select
+              name="listing"
+              defaultValue={listingFilter}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+            >
+              <option value="ALL">All listings</option>
+              {allListings.map((listing) => (
+                <option key={listing.id} value={listing.id}>
+                  {listing.title}{listing.active ? "" : " (paused)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <input type="hidden" name="month" value={monthParam(monthStart)} />
+          <button className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white">
+            Apply property
+          </button>
+        </form>
+
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <Link
+            href={hostCalendarHref({
+              month: monthParam(addMonths(monthStart, -1)),
+              listingId: listingFilter,
+            })}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+          >
+            ← Previous
+          </Link>
+          <div className="text-center">
+            <h2 className="text-2xl font-bold">{formatMonth(monthStart)}</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {monthReservationCount} active reservation
+              {monthReservationCount === 1 ? "" : "s"} · {monthBlockCount} blocked range
+              {monthBlockCount === 1 ? "" : "s"}
+            </p>
+          </div>
+          <Link
+            href={hostCalendarHref({
+              month: monthParam(addMonths(monthStart, 1)),
+              listingId: listingFilter,
+            })}
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
+          >
+            Next →
+          </Link>
         </div>
-        <Link
-          href={`/host/calendar?month=${monthParam(addMonths(monthStart, 1))}`}
-          className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-sky-400 hover:text-sky-700"
-        >
-          Next →
-        </Link>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-slate-600">
@@ -241,7 +291,7 @@ export default async function HostCalendarPage({ searchParams }) {
         </span>
       </div>
 
-      {listings.length ? (
+      {allListings.length ? (
         <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
             {WEEKDAYS.map((weekday) => (
