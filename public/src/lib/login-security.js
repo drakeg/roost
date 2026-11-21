@@ -38,11 +38,17 @@ export function nextLoginFailureState(record, now = new Date()) {
   };
 }
 
-export function successfulLoginState(now = new Date()) {
+export function clearedLoginThrottleState() {
   return {
     failedLoginAttempts: 0,
     loginFailureWindowStartedAt: null,
     loginLockedUntil: null,
+  };
+}
+
+export function successfulLoginState(now = new Date()) {
+  return {
+    ...clearedLoginThrottleState(),
     lastLoginAt: now,
   };
 }
