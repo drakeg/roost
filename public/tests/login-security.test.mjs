@@ -6,6 +6,7 @@ import { promisify } from "node:util";
 import {
   DUMMY_LOGIN_PASSWORD_HASH,
   LOGIN_FAILURE_LIMIT,
+  clearedLoginThrottleState,
   LOGIN_FAILURE_WINDOW_MS,
   LOGIN_LOCK_MS,
   isLoginLocked,
@@ -92,6 +93,14 @@ test("login locks expire without extending themselves", () => {
     isLoginLocked(record, new Date(now.getTime() + LOGIN_LOCK_MS + 1)),
     false
   );
+});
+
+test("password recovery can clear login throttle state without faking a login", () => {
+  assert.deepEqual(clearedLoginThrottleState(), {
+    failedLoginAttempts: 0,
+    loginFailureWindowStartedAt: null,
+    loginLockedUntil: null,
+  });
 });
 
 test("successful login clears throttle state and records last login time", () => {
