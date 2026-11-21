@@ -12,7 +12,10 @@ import {
 } from "@/lib/auth";
 import { issueEmailVerification } from "@/lib/email-verification";
 import { clearedLoginThrottleState } from "@/lib/login-security";
-import { SECURITY_EVENT_TYPES } from "@/lib/security-events";
+import {
+  SECURITY_EVENT_TYPES,
+  sanitizeSecurityEventDetails,
+} from "@/lib/security-events";
 
 export async function updateProfile(formData) {
   const user = await requireUser();
@@ -58,7 +61,7 @@ export async function updateProfile(formData) {
         data: {
           userId: user.id,
           type: SECURITY_EVENT_TYPES.EMAIL_CHANGED,
-          details: { verifiedReset: true },
+          details: sanitizeSecurityEventDetails({ verifiedReset: true }),
         },
       }),
     ]);
@@ -194,7 +197,7 @@ export async function revokeOtherSessions() {
         data: {
           userId: user.id,
           type: SECURITY_EVENT_TYPES.OTHER_SESSIONS_REVOKED,
-          details: { count: deleted.count },
+          details: sanitizeSecurityEventDetails({ count: deleted.count }),
         },
       });
     }
