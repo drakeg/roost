@@ -7,10 +7,10 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 | P0 | Saved searches / search preferences | Lets guests reuse high-intent searches without rebuilding filters | Completed — PR #53 |
 | P0 | Repository standards adoption | Keeps development, documentation, badges, release policy, and validation consistent | Completed — PR #54 |
 | P1 | Admin reservation reporting | Gives small operators visibility into volume, status, cancellations, and booking value | Completed — PR #55 |
-| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle + saved-search coverage |
+| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle, saved-search, audit, pricing, logging coverage |
 | P1 | Structured observability | Speeds diagnosis while protecting credentials/tokens | Initial secure logging merged — PR #56 |
 | P1 | Moderation audit history | Improves accountability for admin actions | Completed — PR #58 |
-| P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | In progress — runbook/smoke merged #65; live-image CI validation |
+| P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | Pilot-ready baseline complete — CI image smoke + LAN smoke verified |
 | P1 | Select an explicit open-source license | Clarifies reuse/contribution rights and enables an accurate license badge | Blocked — maintainer decision |
 | P2 | Account security hardening | Adds optional MFA/recovery/rate-limit/security-event improvements | Backlog |
 | P2 | Host multi-listing workflow polish | Reduces repetitive work for small property managers | Backlog |
@@ -56,6 +56,8 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 - Corrected container Yarn pinning — merged in PR #63.
 - Database-backed application/container health monitoring — merged in PR #64.
 - SMB pilot runbook and smoke tooling — merged in PR #65.
+- Production Docker image CI smoke validation — complete.
+- LAN pilot smoke validation at `http://192.168.0.155:8031` — complete.
 
 ## Prioritization rules
 

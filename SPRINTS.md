@@ -26,17 +26,24 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 - [ ] Expand automated coverage across critical reservation/admin workflows
   - reservation lifecycle/access rules complete
   - saved-search normalization/scoping complete
-- [ ] Validate the built Docker image end-to-end in CI
+- [x] Validate the built Docker image end-to-end in CI
   - PostgreSQL 17 service
   - full Prisma migration deployment
   - production container startup
   - database-backed health wait
   - pilot smoke command
 
+### Completed deployment validation
+
+- [x] Refresh the LAN-accessible Docker test environment after merged migrations/features
+- [x] Run the full pilot smoke test against the refreshed LAN deployment
+  - database-backed health passed
+  - home/search/login/register smoke checks passed at `http://192.168.0.155:8031`
+
 ### Ready next
 
-- [ ] Refresh the LAN-accessible Docker test environment after merged migrations/features
-- [ ] Run the full pilot smoke test against the refreshed LAN deployment
+- [ ] Expand automated coverage for listing uploads and remaining host/admin workflows
+- [ ] Begin host multi-listing workflow polish for small operators
 
 ### Acceptance
 
