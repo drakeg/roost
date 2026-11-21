@@ -2,6 +2,10 @@ import { getCurrentSession, requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { changePassword, resendEmailVerification, revokeOtherSessions, revokeSession, updateProfile } from "./actions";
 import { MAX_ACTIVE_SESSIONS } from "@/lib/session-security";
+import {
+  securityEventLabel,
+  securityEventSummary,
+} from "@/lib/security-events";
 
 export const dynamic = "force-dynamic";
 
@@ -33,18 +37,37 @@ function formatSessionDate(value) {
   }).format(value);
 }
 
+function formatSecurityEventDate(value) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  }).format(value);
+}
+
 export default async function AccountPage({ searchParams }) {
   const user = await requireUser();
   const currentSession = await getCurrentSession();
   const params = await searchParams;
 
-  const sessions = await prisma.session.findMany({
-    where: {
-      userId: user.id,
-      expiresAt: { gt: new Date() },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [sessions, securityEvents] = await Promise.all([
+    prisma.session.findMany({
+      where: {
+        userId: user.id,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.securityEvent.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
+  ]);
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-10">
@@ -198,6 +221,46 @@ export default async function AccountPage({ searchParams }) {
           </div>
         </section>
 
+
+        <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div>
+            <h2 className="text-xl font-bold">Recent security activity</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Review recent security-sensitive changes on your account. Roost stores only limited, non-sensitive event details here.
+            </p>
+          </div>
+
+          {securityEvents.length ? (
+            <div className="space-y-3">
+              {securityEvents.map((event) => {
+                const summary = securityEventSummary(event);
+
+                return (
+                  <article
+                    key={event.id}
+                    className="rounded-2xl border border-slate-200 p-4"
+                  >
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="font-semibold">
+                        {securityEventLabel(event.type)}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {formatSecurityEventDate(event.createdAt)}
+                      </p>
+                    </div>
+                    {summary ? (
+                      <p className="mt-2 text-sm text-slate-600">{summary}</p>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500">
+              No security activity has been recorded yet.
+            </p>
+          )}
+        </section>
 
         <form action={changePassword} className="space-y-5 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
           <div>
