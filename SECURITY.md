@@ -7,6 +7,7 @@ Do not report credentials, personal data, session tokens, working exploits, or o
 - Authentication and authorization decisions are enforced server-side.
 - Login password verification uses constant-cost scrypt work for unknown usernames, and repeated failed logins are temporarily throttled server-side.
 - Expired sessions are pruned during sign-in, and active sessions are capped per account with oldest-session eviction.
+- Important account-security changes are recorded in a user-visible activity history using bounded, non-sensitive metadata only.
 - Passwords remain scrypt-hashed; session and verification tokens must never be logged.
 - PostgreSQL credentials and SMTP credentials belong in environment configuration, never source control.
 - Listing uploads must remain type/size/signature validated and stored outside the repository.
