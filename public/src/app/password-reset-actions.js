@@ -7,6 +7,7 @@ import { destroySession, hashPassword } from "@/lib/auth";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import { logger } from "@/lib/logger";
 import { clearedLoginThrottleState } from "@/lib/login-security";
+import { SECURITY_EVENT_TYPES } from "@/lib/security-events";
 
 const RESET_MINUTES = 30;
 
@@ -124,6 +125,12 @@ export async function resetPassword(formData) {
     }),
     prisma.session.deleteMany({
       where: { userId: record.userId },
+    }),
+    prisma.securityEvent.create({
+      data: {
+        userId: record.userId,
+        type: SECURITY_EVENT_TYPES.PASSWORD_RESET,
+      },
     }),
   ]);
 
