@@ -3,8 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { destroySession, getCurrentSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
+import {
+  destroySession,
+  getCurrentSession,
+  hashPassword,
+  requireUser,
+  verifyPassword,
+} from "@/lib/auth";
 import { issueEmailVerification } from "@/lib/email-verification";
+import { clearedLoginThrottleState } from "@/lib/login-security";
+import { SECURITY_EVENT_TYPES } from "@/lib/security-events";
 
 export async function updateProfile(formData) {
   const user = await requireUser();
@@ -33,15 +41,33 @@ export async function updateProfile(formData) {
 
   const emailChanged = (user.email ?? "") !== email;
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      email: email || null,
-      emailVerifiedAt: emailChanged ? null : user.emailVerifiedAt,
-      firstName: firstName || null,
-      lastName: lastName || null,
-    },
-  });
+  const profileData = {
+    email: email || null,
+    emailVerifiedAt: emailChanged ? null : user.emailVerifiedAt,
+    firstName: firstName || null,
+    lastName: lastName || null,
+  };
+
+  if (emailChanged) {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: profileData,
+      }),
+      prisma.securityEvent.create({
+        data: {
+          userId: user.id,
+          type: SECURITY_EVENT_TYPES.EMAIL_CHANGED,
+          details: { verifiedReset: true },
+        },
+      }),
+    ]);
+  } else {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: profileData,
+    });
+  }
 
   if (emailChanged && email) {
     await issueEmailVerification(user.id, email);
@@ -75,14 +101,26 @@ export async function changePassword(formData) {
     redirect("/account?error=Current%20password%20is%20incorrect");
   }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { password: await hashPassword(newPassword) },
-  });
+  const password = await hashPassword(newPassword);
 
-  await prisma.session.deleteMany({
-    where: { userId: user.id },
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password,
+        ...clearedLoginThrottleState(),
+      },
+    }),
+    prisma.session.deleteMany({
+      where: { userId: user.id },
+    }),
+    prisma.securityEvent.create({
+      data: {
+        userId: user.id,
+        type: SECURITY_EVENT_TYPES.PASSWORD_CHANGED,
+      },
+    }),
+  ]);
   await destroySession();
 
   redirect("/login");
@@ -99,15 +137,40 @@ export async function revokeSession(formData) {
   }
 
   if (current?.id === sessionId) {
+    await prisma.$transaction([
+      prisma.session.deleteMany({
+        where: {
+          id: sessionId,
+          userId: user.id,
+        },
+      }),
+      prisma.securityEvent.create({
+        data: {
+          userId: user.id,
+          type: SECURITY_EVENT_TYPES.SESSION_REVOKED,
+        },
+      }),
+    ]);
     await destroySession();
     redirect("/login");
   }
 
-  await prisma.session.deleteMany({
-    where: {
-      id: sessionId,
-      userId: user.id,
-    },
+  await prisma.$transaction(async (tx) => {
+    const deleted = await tx.session.deleteMany({
+      where: {
+        id: sessionId,
+        userId: user.id,
+      },
+    });
+
+    if (deleted.count) {
+      await tx.securityEvent.create({
+        data: {
+          userId: user.id,
+          type: SECURITY_EVENT_TYPES.SESSION_REVOKED,
+        },
+      });
+    }
   });
 
   revalidatePath("/account");
@@ -118,11 +181,23 @@ export async function revokeOtherSessions() {
   const user = await requireUser();
   const current = await getCurrentSession();
 
-  await prisma.session.deleteMany({
-    where: {
-      userId: user.id,
-      ...(current ? { id: { not: current.id } } : {}),
-    },
+  await prisma.$transaction(async (tx) => {
+    const deleted = await tx.session.deleteMany({
+      where: {
+        userId: user.id,
+        ...(current ? { id: { not: current.id } } : {}),
+      },
+    });
+
+    if (deleted.count) {
+      await tx.securityEvent.create({
+        data: {
+          userId: user.id,
+          type: SECURITY_EVENT_TYPES.OTHER_SESSIONS_REVOKED,
+          details: { count: deleted.count },
+        },
+      });
+    }
   });
 
   revalidatePath("/account");
