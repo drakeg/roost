@@ -58,11 +58,19 @@ export default async function MyListingsPage() {
                   </button>
                 </form>
               </div>
-              {!listing.active ? (
-                <p className="text-center text-xs font-semibold text-amber-700">
-                  Hidden from public search
-                </p>
-              ) : null}
+              <div className="flex items-center justify-between gap-3 px-1 text-xs">
+                <Link
+                  href={`/host/calendar?listing=${listing.id}`}
+                  className="font-semibold text-sky-700 hover:text-sky-800"
+                >
+                  View in calendar →
+                </Link>
+                {!listing.active ? (
+                  <span className="font-semibold text-amber-700">
+                    Hidden from public search
+                  </span>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
