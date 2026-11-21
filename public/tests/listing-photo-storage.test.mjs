@@ -104,7 +104,7 @@ test("valid uploaded photos can be saved, read, and deleted", async () => {
       /^\/uploads\/listings\/listing_1\/[A-Za-z0-9-]+\.png$/
     );
 
-    const parts = publicPath.slice(1).split("/");
+    const parts = publicPath.slice("/uploads/".length).split("/");
     const stored = await readUploadedListingPhoto(parts);
     assert.equal(stored.contentType, "image/png");
     assert.deepEqual(stored.body, PNG);
