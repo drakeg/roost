@@ -26,6 +26,7 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 - [ ] Expand automated coverage across critical reservation/admin workflows
   - reservation lifecycle/access rules complete
   - saved-search normalization/scoping complete
+  - listing photo URL/storage security and cleanup coverage complete
 - [x] Validate the built Docker image end-to-end in CI
   - PostgreSQL 17 service
   - full Prisma migration deployment

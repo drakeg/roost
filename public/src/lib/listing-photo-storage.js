@@ -21,7 +21,11 @@ function uploadRoot() {
 }
 
 function listingDirectory(listingId) {
-  return path.join(uploadRoot(), "listings", listingId);
+  const value = String(listingId ?? "");
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new Error("Invalid listing identifier.");
+  }
+  return path.join(uploadRoot(), "listings", value);
 }
 
 function isFileUpload(value) {
