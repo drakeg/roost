@@ -7,6 +7,13 @@ import {
   declineReservation,
 } from "./actions";
 import { calculateNights, formatCurrency } from "@/lib/pricing";
+import {
+  HOST_RESERVATION_STATUS_FILTERS,
+  hostReservationsHref,
+  hostedReservationsWhere,
+  normalizeHostListingFilter,
+  normalizeHostReservationStatus,
+} from "@/lib/host-reservation-filters";
 
 export const dynamic = "force-dynamic";
 
@@ -28,31 +35,30 @@ function statusLabel(status) {
   }[status] ?? status;
 }
 
-const STATUS_FILTERS = [
-  ["ALL", "All"],
-  ["PENDING", "Pending"],
-  ["CONFIRMED", "Confirmed"],
-  ["DECLINED", "Declined"],
-  ["CANCELLED", "Cancelled"],
-];
-
-function normalizeStatusFilter(value) {
-  const status = String(value ?? "ALL").toUpperCase();
-  return STATUS_FILTERS.some(([key]) => key === status) ? status : "ALL";
-}
-
 export default async function HostReservationsPage({ searchParams }) {
   const host = await requireUser();
   const params = await searchParams;
-  const statusFilter = normalizeStatusFilter(params?.status);
+  const statusFilter = normalizeHostReservationStatus(params?.status);
+  const hostListings = await prisma.listing.findMany({
+    where: { ownerId: host.id },
+    select: {
+      id: true,
+      title: true,
+      active: true,
+    },
+    orderBy: { title: "asc" },
+  });
+  const listingFilter = normalizeHostListingFilter(
+    params?.listing,
+    hostListings.map((listing) => listing.id)
+  );
 
   const trips = await prisma.trip.findMany({
-    where: {
-      listing: {
-        ownerId: host.id,
-      },
-      ...(statusFilter === "ALL" ? {} : { status: statusFilter }),
-    },
+    where: hostedReservationsWhere({
+      hostId: host.id,
+      status: statusFilter,
+      listingId: listingFilter,
+    }),
     include: {
       listing: true,
       user: {
@@ -92,11 +98,51 @@ export default async function HostReservationsPage({ searchParams }) {
         </Link>
       </div>
 
-      <nav className="mt-6 flex flex-wrap gap-2" aria-label="Filter hosted reservations by status">
-        {STATUS_FILTERS.map(([key, label]) => (
+      <div className="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <label>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Property
+            </span>
+            <select
+              name="listing"
+              defaultValue={listingFilter}
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3"
+            >
+              <option value="ALL">All listings</option>
+              {hostListings.map((listing) => (
+                <option key={listing.id} value={listing.id}>
+                  {listing.title}{listing.active ? "" : " (paused)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          {statusFilter !== "ALL" ? (
+            <input type="hidden" name="status" value={statusFilter} />
+          ) : null}
+          <button className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white">
+            Apply property
+          </button>
+        </form>
+
+        {listingFilter !== "ALL" ? (
+          <Link
+            href={hostReservationsHref({ status: statusFilter })}
+            className="text-sm font-semibold text-sky-700"
+          >
+            Clear property filter
+          </Link>
+        ) : null}
+      </div>
+
+      <nav className="mt-4 flex flex-wrap gap-2" aria-label="Filter hosted reservations by status">
+        {HOST_RESERVATION_STATUS_FILTERS.map(([key, label]) => (
           <Link
             key={key}
-            href={key === "ALL" ? "/host/reservations" : `/host/reservations?status=${key}`}
+            href={hostReservationsHref({
+              status: key,
+              listingId: listingFilter,
+            })}
             className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
               statusFilter === key
                 ? "border-slate-950 bg-slate-950 text-white"
@@ -196,16 +242,21 @@ export default async function HostReservationsPage({ searchParams }) {
         ) : (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
             <p className="font-semibold">
-              {statusFilter === "ALL"
-                ? "No reservations yet."
-                : `No ${statusLabel(statusFilter).toLowerCase()} reservations.`}
+              {listingFilter !== "ALL"
+                ? "No reservations match this property and status."
+                : statusFilter === "ALL"
+                  ? "No reservations yet."
+                  : `No ${statusLabel(statusFilter).toLowerCase()} reservations.`}
             </p>
-            {statusFilter === "ALL" ? (
+            {statusFilter === "ALL" && listingFilter === "ALL" ? (
               <p className="mt-2 text-sm text-slate-500">
                 Reservation requests will appear here when guests book your listings.
               </p>
             ) : (
-              <Link href="/host/reservations" className="mt-2 inline-block text-sm font-semibold text-sky-700">
+              <Link
+                href="/host/reservations"
+                className="mt-2 inline-block text-sm font-semibold text-sky-700"
+              >
                 View all reservations →
               </Link>
             )}
