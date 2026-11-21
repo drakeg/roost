@@ -44,9 +44,10 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 ### Ready next
 
 - [ ] Expand automated coverage for listing uploads and remaining host/admin workflows
-- [ ] Continue host multi-listing workflow polish for small operators
+- [x] Complete current host multi-listing workflow slice for small operators
   - per-property reservation filtering and listing shortcuts implemented
   - per-property host calendar filtering and listing shortcuts implemented
+  - My Listings title/location/type search and Active/Paused filtering implemented
 
 ### Acceptance
 
