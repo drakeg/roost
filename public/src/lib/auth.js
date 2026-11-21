@@ -3,6 +3,10 @@ import { promisify } from "node:util";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import {
+  MAX_ACTIVE_SESSIONS,
+  excessSessionIdsForNewSession,
+} from "@/lib/session-security";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "roost_session";
@@ -28,14 +32,62 @@ function hashToken(token) {
 
 export async function createSession(userId) {
   const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const expiresAt = new Date(
+    now.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000
+  );
 
   const requestHeaders = await headers();
   const userAgent = requestHeaders.get("user-agent")?.slice(0, 500) || null;
 
-  await prisma.session.create({
-    data: { tokenHash: hashToken(token), userId, expiresAt, userAgent },
+  await prisma.session.deleteMany({
+    where: { expiresAt: { lte: now } },
   });
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          const activeSessions = await tx.session.findMany({
+            where: {
+              userId,
+              expiresAt: { gt: now },
+            },
+            select: {
+              id: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+          });
+
+          const excessSessionIds =
+            excessSessionIdsForNewSession(activeSessions);
+
+          if (excessSessionIds.length) {
+            await tx.session.deleteMany({
+              where: {
+                userId,
+                id: { in: excessSessionIds },
+              },
+            });
+          }
+
+          await tx.session.create({
+            data: {
+              tokenHash: hashToken(token),
+              userId,
+              expiresAt,
+              userAgent,
+            },
+          });
+        },
+        { isolationLevel: "Serializable" }
+      );
+      break;
+    } catch (error) {
+      if (error?.code !== "P2034" || attempt === 3) throw error;
+    }
+  }
 
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
