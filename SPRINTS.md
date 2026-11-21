@@ -6,17 +6,37 @@ Roost uses one-week delivery sprints, but execution continues across Sprint boun
 
 **Goal:** turn the completed reservation and host-management foundation into a testable product that a small independent host could realistically evaluate.
 
-### In review
+### Completed this Sprint
 
-- [ ] Saved searches / search preferences — PR #53
-- [ ] Repository standards adoption, badge validation, and governance synchronization
+- [x] Saved searches / search preferences — PR #53
+- [x] Repository standards adoption and badge validation — PR #54
+- [x] Admin reservation reporting and initial Node test suite — PR #55
+- [x] Structured/redacted application logging security fix — PR #56
+- [x] Moderation audit history — PR #58
+- [x] Docker/local artifact hygiene — PR #59
+- [x] Pinned container Yarn/OpenSSL tooling — PR #60
+- [x] Reservation lifecycle/access test coverage — PR #61
+- [x] Saved-search rules/scoping test coverage — PR #62
+- [x] Corrected container Yarn pinning — PR #63
+- [x] Database-backed application/container health monitoring — PR #64
+- [x] SMB pilot runbook and smoke tooling — PR #65
+
+### In progress
+
+- [ ] Expand automated coverage across critical reservation/admin workflows
+  - reservation lifecycle/access rules complete
+  - saved-search normalization/scoping complete
+- [ ] Validate the built Docker image end-to-end in CI
+  - PostgreSQL 17 service
+  - full Prisma migration deployment
+  - production container startup
+  - database-backed health wait
+  - pilot smoke command
 
 ### Ready next
 
-- [ ] Admin reservation reporting: reservation volume, status mix, cancellations, booking-value snapshots
-- [ ] Automated coverage for reservation authorization, saved searches, and critical host workflows
-- [ ] Structured application logging with credential/token redaction
 - [ ] Refresh the LAN-accessible Docker test environment after merged migrations/features
+- [ ] Run the full pilot smoke test against the refreshed LAN deployment
 
 ### Acceptance
 

@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import {
+  canAccessReservation,
+  isReservationParticipant,
+} from "@/lib/reservation-lifecycle";
 
 export async function getReservationThreadForUser(tripId, user) {
   const trip = await prisma.trip.findUnique({
@@ -59,10 +63,12 @@ export async function getReservationThreadForUser(tripId, user) {
 
   if (!trip) return null;
 
-  const allowed =
-    user.role === "ADMIN" ||
-    trip.userId === user.id ||
-    trip.listing.ownerId === user.id;
+  const allowed = canAccessReservation({
+    userId: user.id,
+    userRole: user.role,
+    guestId: trip.userId,
+    hostId: trip.listing.ownerId,
+  });
 
   return allowed ? trip : null;
 }
@@ -84,11 +90,13 @@ export async function requireReservationThread(tripId, user) {
 
 
 export async function markReservationMessagesRead(trip, user) {
-  const isParticipant =
-    trip.userId === user.id ||
-    trip.listing.ownerId === user.id;
+  const participant = isReservationParticipant({
+    userId: user.id,
+    guestId: trip.userId,
+    hostId: trip.listing.ownerId,
+  });
 
-  if (!isParticipant) return;
+  if (!participant) return;
 
   await prisma.reservationMessage.updateMany({
     where: {

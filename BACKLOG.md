@@ -4,13 +4,13 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 
 | Priority | Item | Customer / operator value | Status |
 | --- | --- | --- | --- |
-| P0 | Saved searches / search preferences | Lets guests reuse high-intent searches without rebuilding filters | In review — PR #53 |
-| P0 | Repository standards adoption | Keeps development, documentation, badges, release policy, and validation consistent | In progress |
-| P1 | Admin reservation reporting | Gives small operators visibility into volume, status, cancellations, and booking value | Ready next |
-| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | Ready |
-| P1 | Structured observability | Speeds diagnosis while protecting credentials/tokens | Ready |
-| P1 | Moderation audit history | Improves accountability for admin actions | Planned |
-| P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | Planned |
+| P0 | Saved searches / search preferences | Lets guests reuse high-intent searches without rebuilding filters | Completed — PR #53 |
+| P0 | Repository standards adoption | Keeps development, documentation, badges, release policy, and validation consistent | Completed — PR #54 |
+| P1 | Admin reservation reporting | Gives small operators visibility into volume, status, cancellations, and booking value | Completed — PR #55 |
+| P1 | Critical-path automated tests | Reduces regression risk in reservation, auth, search, upload, and host workflows | In progress — reservation lifecycle + saved-search coverage |
+| P1 | Structured observability | Speeds diagnosis while protecting credentials/tokens | Initial secure logging merged — PR #56 |
+| P1 | Moderation audit history | Improves accountability for admin actions | Completed — PR #58 |
+| P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | In progress — runbook/smoke merged #65; live-image CI validation |
 | P1 | Select an explicit open-source license | Clarifies reuse/contribution rights and enables an accurate license badge | Blocked — maintainer decision |
 | P2 | Account security hardening | Adds optional MFA/recovery/rate-limit/security-event improvements | Backlog |
 | P2 | Host multi-listing workflow polish | Reduces repetitive work for small property managers | Backlog |
@@ -44,6 +44,18 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 - Host calendar overview — merged in PR #50.
 - First-party listing photo uploads — merged in PR #51.
 - Review sorting/pagination and host responses — merged in PR #52.
+- Saved searches — merged in PR #53.
+- Repository standards adoption — merged in PR #54.
+- Admin reservation reporting and initial test suite — merged in PR #55.
+- Structured/redacted logging security fix — merged in PR #56.
+- Moderation audit history — merged in PR #58.
+- Docker/local artifact hygiene — merged in PR #59.
+- Pinned container Yarn/OpenSSL tooling — merged in PR #60.
+- Reservation lifecycle/access test coverage — merged in PR #61.
+- Saved-search normalization/scoping test coverage — merged in PR #62.
+- Corrected container Yarn pinning — merged in PR #63.
+- Database-backed application/container health monitoring — merged in PR #64.
+- SMB pilot runbook and smoke tooling — merged in PR #65.
 
 ## Prioritization rules
 

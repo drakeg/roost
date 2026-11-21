@@ -39,6 +39,7 @@ model User {
   sentReservationMessages ReservationMessage[]
   reservationEvents ReservationEvent[]
   savedSearches SavedSearch[]
+  adminAuditEvents AdminAuditEvent[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -231,4 +232,20 @@ model SavedSearch {
   updatedAt  DateTime @updatedAt
 
   @@index([userId, createdAt])
+}
+
+
+model AdminAuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String
+  targetId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId, createdAt])
 }

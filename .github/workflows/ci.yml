@@ -17,8 +17,23 @@ jobs:
   app:
     name: Unified Next.js app
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_DB: roost
+          POSTGRES_USER: roost
+          POSTGRES_PASSWORD: roost
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U roost -d roost"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      DATABASE_URL: postgresql://roost:roost@localhost:5432/roost
+      DATABASE_URL: postgresql://roost:roost@localhost:5432/roost?schema=public
+      APP_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -31,7 +46,9 @@ jobs:
       - name: Install dependencies
         working-directory: public
         run: yarn install --frozen-lockfile
-      - name: Test
+      - name: Test pilot smoke tooling
+        run: python3 -m unittest scripts/test_pilot_smoke_test.py -v
+      - name: Test application
         working-directory: public
         run: yarn test
       - name: Build
@@ -39,3 +56,30 @@ jobs:
         run: yarn build
       - name: Build Docker image
         run: docker build -t unified-nextjs-ci ./public
+      - name: Start CI deployment
+        run: |
+          docker run --detach \
+            --name roost-ci \
+            --network host \
+            --env DATABASE_URL \
+            --env APP_URL \
+            --env PORT=3000 \
+            unified-nextjs-ci
+      - name: Wait for database-backed health
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/health | grep --quiet '"status":"ok"'; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs roost-ci
+          exit 1
+      - name: Smoke test deployed Docker image
+        run: python3 scripts/pilot_smoke_test.py --base-url http://127.0.0.1:3000
+      - name: Show deployment logs on failure
+        if: failure()
+        run: docker logs roost-ci || true
+      - name: Stop CI deployment
+        if: always()
+        run: docker rm --force roost-ci || true
