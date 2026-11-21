@@ -39,7 +39,7 @@ if readme.count(START) != 1 or readme.count(END) != 1:
     errors.append("README must contain exactly one bounded Mad Mallard badge block")
 
 expected_fragments = (
-    "Next.js-15.5.28",
+    "Next.js-15.5.29",
     "React-18.2.0",
     "Node.js-24",
     "Prisma-7.10.0",
