@@ -40,6 +40,7 @@ model User {
   reservationEvents ReservationEvent[]
   savedSearches SavedSearch[]
   adminAuditEvents AdminAuditEvent[]
+  securityEvents SecurityEvent[]
   failedLoginAttempts Int       @default(0)
   loginFailureWindowStartedAt DateTime?
   loginLockedUntil DateTime?
@@ -252,4 +253,17 @@ model AdminAuditEvent {
   @@index([createdAt])
   @@index([actorId, createdAt])
   @@index([targetType, targetId, createdAt])
+}
+
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
 }
