@@ -13,7 +13,7 @@ This is Roost's root backlog and source of truth for delivery priority. Detailed
 | P1 | SMB host pilot package | Creates the shortest path to real demand/willingness-to-pay feedback | Pilot-ready baseline complete — CI image smoke + LAN smoke verified |
 | P1 | Select an explicit open-source license | Clarifies reuse/contribution rights and enables an accurate license badge | Blocked — maintainer decision |
 | P2 | Account security hardening | Adds optional MFA/recovery/rate-limit/security-event improvements | Backlog |
-| P2 | Host multi-listing workflow polish | Reduces repetitive work for small property managers | In progress — per-property reservation filtering |
+| P2 | Host multi-listing workflow polish | Reduces repetitive work for small property managers | In progress — per-property reservation and calendar filtering |
 | P3 | Payments discovery and state model | Defines safe authorization/capture/refund/webhook behavior before implementation | Backlog |
 | P3 | Host economics / payout reporting | Adds revenue reporting only after payment records become authoritative | Blocked by payments |
 
