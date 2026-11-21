@@ -3,10 +3,7 @@ import { promisify } from "node:util";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import {
-  MAX_ACTIVE_SESSIONS,
-  excessSessionIdsForNewSession,
-} from "@/lib/session-security";
+import { excessSessionIdsForNewSession } from "@/lib/session-security";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "roost_session";
