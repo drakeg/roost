@@ -16,7 +16,10 @@ import {
   successfulLoginState,
 } from "@/lib/login-security";
 import { logger } from "@/lib/logger";
-import { SECURITY_EVENT_TYPES } from "@/lib/security-events";
+import {
+  SECURITY_EVENT_TYPES,
+  sanitizeSecurityEventDetails,
+} from "@/lib/security-events";
 
 function normalizeUsername(value) {
   return String(value ?? "").trim().toLowerCase();
@@ -105,7 +108,9 @@ async function recordLoginFailure(userId, now) {
               data: {
                 userId: current.id,
                 type: SECURITY_EVENT_TYPES.LOGIN_LOCKED,
-                details: { reason: "failed_login_limit" },
+                details: sanitizeSecurityEventDetails({
+                  reason: "failed_login_limit",
+                }),
               },
             });
           }
