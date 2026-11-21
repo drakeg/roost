@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { excessSessionIdsForNewSession } from "@/lib/session-security";
+import { SECURITY_EVENT_TYPES } from "@/lib/security-events";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "roost_session";
@@ -65,6 +66,14 @@ export async function createSession(userId) {
               where: {
                 userId,
                 id: { in: excessSessionIds },
+              },
+            });
+
+            await tx.securityEvent.create({
+              data: {
+                userId,
+                type: SECURITY_EVENT_TYPES.SESSION_LIMIT_EVICTION,
+                details: { count: excessSessionIds.length },
               },
             });
           }
